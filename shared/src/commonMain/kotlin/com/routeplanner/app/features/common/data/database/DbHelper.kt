@@ -1,7 +1,10 @@
 package com.routeplanner.app.features.common.data.database
 
 import com.routeplanner.app.AppDatabase
+import com.routeplanner.app.Route
 import com.routeplanner.app.dbFactory.DatabaseFactory
+import com.routeplanner.app.features.common.data.database.adapter.instantAdapter
+import com.routeplanner.app.features.common.data.database.adapter.stopsAdapter
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -13,7 +16,11 @@ class DbHelper(
 
     suspend fun <Result : Any> withDatabase(block: suspend (AppDatabase) -> Result) =
         mutex.withLock {
-            database?.let { return@withLock block(it) }
-            database = AppDatabase(databaseFactory.createDriver())
+            if (database == null) {
+                database = AppDatabase(
+                    databaseFactory.createDriver(),
+                    Route.Adapter(instantAdapter))
+            }
+            return@withLock block(database!!)
         }
 }

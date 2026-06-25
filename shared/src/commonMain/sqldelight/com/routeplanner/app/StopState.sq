@@ -1,0 +1,11 @@
+CREATE TABLE StopState (
+    id INTEGER NOT NULL PRIMARY KEY,
+    description TEXT NOT NULL
+);
+
+INSERT INTO StopState (id, description) VALUES (1, 'PENDIENTE');
+INSERT INTO StopState (id, description) VALUES (2, 'EXITOSA');
+INSERT INTO StopState (id, description) VALUES (3, 'FALLIDA');
+
+selectAll:
+SELECT * FROM StopState;

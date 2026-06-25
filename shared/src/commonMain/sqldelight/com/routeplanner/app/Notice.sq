@@ -1,0 +1,13 @@
+CREATE TABLE Notice (
+    id INTEGER NOT NULL PRIMARY KEY,
+    description TEXT NOT NULL
+);
+
+INSERT INTO Notice (id, description) VALUES (1, 'AVISO');
+INSERT INTO Notice (id, description) VALUES (2, 'NOTIFICACION');
+INSERT INTO Notice (id, description) VALUES (3, 'INTIMACION');
+INSERT INTO Notice (id, description) VALUES (4, 'CEDULA');
+INSERT INTO Notice (id, description) VALUES (5, 'PLIEGO');
+
+selectAll:
+SELECT * FROM Notice;

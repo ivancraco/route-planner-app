@@ -1,0 +1,14 @@
+CREATE TABLE RouteState (
+    id INTEGER NOT NULL PRIMARY KEY,
+    description TEXT NOT NULL
+);
+
+INSERT INTO RouteState (id, description) VALUES (1, 'EN CURSO');
+INSERT INTO RouteState (id, description) VALUES (2, 'FINALIZADA');
+INSERT INTO RouteState (id, description) VALUES (3, 'CANCELADA');
+
+selectAll:
+SELECT * FROM RouteState;
+
+selectById:
+SELECT * FROM RouteState WHERE id = :id;

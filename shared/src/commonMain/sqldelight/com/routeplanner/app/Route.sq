@@ -1,0 +1,175 @@
+import kotlin.time.Instant;
+
+CREATE TABLE Route (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER NOT NULL,
+    stateId INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    createdAt TEXT AS Instant NOT NULL,
+    originDir TEXT NOT NULL,
+    originPlaceId TEXT,
+    originLatitude REAL NOT NULL,
+    originLongitude REAL NOT NULL,
+    destinationDir TEXT NOT NULL,
+    destinationPlaceId TEXT,
+    destinationLatitude REAL NOT NULL,
+    destinationLongitude REAL NOT NULL,
+    isSynced INTEGER NOT NULL DEFAULT 0,
+    isDeleted INTEGER NOT NULL DEFAULT 0,
+
+    --FOREIGN KEY (user_id) REFERENCES User(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (stateId) REFERENCES RouteState(id)
+);
+
+-- Queries
+insert:
+INSERT INTO Route (
+    userId,
+    stateId,
+    name,
+    createdAt,
+    originDir,
+    originPlaceId,
+    originLatitude,
+    originLongitude,
+    destinationDir,
+    destinationPlaceId,
+    destinationLatitude,
+    destinationLongitude
+) VALUES (
+    :userId,
+    :stateId,
+    :name,
+    :createdAt,
+    :originDir,
+    :originPlaceId,
+    :originLatitude,
+    :originLongitude,
+    :destinationDir,
+    :destinationPlaceId,
+    :destinationLatitude,
+    :destinationLongitude
+);
+
+update:
+UPDATE Route SET
+    stateId = :stateId,
+    name = :name,
+    originDir = :originDir,
+    originPlaceId = :originPlaceId,
+    originLatitude = :originLatitude,
+    originLongitude = :originLongitude,
+    destinationDir = :destinationDir,
+    destinationPlaceId = :destinationPlaceId,
+    destinationLatitude = :destinationLatitude,
+    destinationLongitude = :destinationLongitude,
+    isSynced = 0
+WHERE id = :id AND isDeleted = 0;
+
+updateName:
+UPDATE Route SET
+    name = :name,
+    isSynced = 0
+WHERE id = :id AND isDeleted = 0;
+
+updateState:
+UPDATE Route SET
+    stateId = :stateId,
+    isSynced = 0
+WHERE id = :id AND isDeleted = 0;
+
+softDelete:
+UPDATE Route SET
+    isDeleted = 1,
+    isSynced  = 0
+WHERE id = :id;
+
+selectAll:
+SELECT Route.id, Route.name
+FROM Route
+WHERE Route.id = :id AND isDeleted = 0;
+--SELECT * FROM Route WHERE is_deleted = 0;
+
+selectById:
+SELECT * FROM Route WHERE id = :id;
+
+selectByUserId:
+SELECT * FROM Route WHERE userId = :userId AND isDeleted = 0;
+
+selectRouteWithState:
+SELECT Route.*,
+       RouteState.description AS stateDescription
+FROM Route
+JOIN RouteState ON Route.stateId = RouteState.id
+WHERE Route.id = :id AND isDeleted = 0;
+
+selectRouteSummaries:
+SELECT id, name, createdAt
+FROM Route
+WHERE isDeleted = 0
+ORDER BY createdAt DESC;
+
+-- Sync queries
+selectPendingSync:
+SELECT * FROM Route WHERE isSynced = 0 AND isDeleted = 0;
+
+selectPendingDelete:
+SELECT * FROM Route WHERE isDeleted = 1;
+
+markAsSynced:
+UPDATE Route SET isSynced = 1 WHERE id = :id;
+
+lastInsertRowId:
+SELECT last_insert_rowid();
+
+insertFromApi:
+INSERT INTO Route (
+    id,
+    userId,
+    stateId,
+    name,
+    createdAt,
+    originDir,
+    originPlaceId,
+    originLatitude,
+    originLongitude,
+    destinationDir,
+    destinationPlaceId,
+    destinationLatitude,
+    destinationLongitude,
+    isSynced,
+    isDeleted
+) VALUES (
+    :id,
+    :userId,
+    :stateId,
+    :name,
+    :createdAt,
+    :originDir,
+    :originPlaceId,
+    :originLatitude,
+    :originLongitude,
+    :destinationDir,
+    :destinationPlaceId,
+    :destinationLatitude,
+    :destinationLongitude,
+    1,
+    0
+);
+
+updateFromApi:
+UPDATE Route SET
+    stateId = :stateId,
+    name = :name,
+    createdAt = :createdAt,
+    originDir = :originDir,
+    originPlaceId = :originPlaceId,
+    originLatitude = :originLatitude,
+    originLongitude = :originLongitude,
+    destinationDir = :destinationDir,
+    destinationPlaceId = :destinationPlaceId,
+    destinationLatitude = :destinationLatitude,
+    destinationLongitude = :destinationLongitude,
+    isSynced = 1,
+    isDeleted = 0
+WHERE id = :id AND isSynced = 1;

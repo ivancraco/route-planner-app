@@ -4,5 +4,7 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>Permite que esta aplicación utilice tu ubicación</string>
 </dict>
 </plist>

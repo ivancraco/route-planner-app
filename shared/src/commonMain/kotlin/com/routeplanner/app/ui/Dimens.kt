@@ -68,7 +68,7 @@ val DefaultDimens = Dimens(
     space3xl = 64.dp,
 
     // Component sizes
-    buttonHeight = 48.dp,
+    buttonHeight = 46.dp,
     buttonHeightSm = 36.dp,
     iconSizeSm = 16.dp,
     iconSizeMd = 24.dp,

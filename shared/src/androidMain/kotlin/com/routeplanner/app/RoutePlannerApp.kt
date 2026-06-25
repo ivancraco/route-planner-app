@@ -11,6 +11,11 @@ class RoutePlannerApp : Application() {
         single { DatabaseFactory(applicationContext) }
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        initKoinAndroid()
+    }
+
     private fun initKoinAndroid() {
         initKoin(additionalModules = listOf(androidModules)) {
             androidContext(applicationContext)

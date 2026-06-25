@@ -1,7 +1,7 @@
 package com.routeplanner.app.di
 
 import com.routeplanner.app.features.common.data.database.DbHelper
-import com.routeplanner.app.features.common.data.database.dao.RouteDao
+import com.routeplanner.app.features.notifier.data.local.dao.NotifierRouteDao
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import org.koin.dsl.module
@@ -11,5 +11,5 @@ fun cacheModule() = module {
     single<CoroutineContext> { Dispatchers.Default }
     single { CoroutineScope(get()) }
     single { DbHelper(get()) }
-    single { RouteDao(get()) }
+    single { NotifierRouteDao(get()) }
 }

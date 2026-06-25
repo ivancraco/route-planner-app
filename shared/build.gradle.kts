@@ -49,11 +49,14 @@ kotlin {
             implementation(libs.koin.android)
             //Sqldelight
             implementation(libs.android.driver)
+            //Play services
+            implementation(libs.play.services.location)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
+            implementation(libs.material.icons.extended)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
             implementation(libs.compose.uiToolingPreview)
@@ -74,6 +77,15 @@ kotlin {
             implementation(libs.multiplatform.settings)
             //Data time
             implementation(libs.kotlinx.datetime)
+            //SqlDelight
+            implementation(libs.primitive.adapters)
+            implementation(libs.sqldelight.coroutines.extensions)
+
+            //Maps
+            implementation(libs.kmp.maps.core)
+            //Moko Permissions
+            implementation(libs.permissions.location)
+            implementation(libs.permissions.compose)
         }
         iosMain.dependencies {
             //Ktor client

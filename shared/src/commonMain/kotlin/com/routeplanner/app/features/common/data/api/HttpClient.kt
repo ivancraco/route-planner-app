@@ -16,6 +16,7 @@ val httpCliente = HttpClient {
             Json {
                 prettyPrint = true
                 isLenient = true
+                ignoreUnknownKeys = true
             })
     }
     install(Logging) {

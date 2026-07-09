@@ -78,6 +78,24 @@ UPDATE Route SET
     isSynced = 0
 WHERE id = :id AND isDeleted = 0;
 
+updateRouteOrigin:
+UPDATE Route SET
+    originDir = :originDir,
+    originLatitude = :originLatitude,
+    originLongitude = :originLongitude,
+    originPlaceId = :originPlaceId,
+    isSynced = 0
+WHERE id = :id AND isDeleted = 0;
+
+updateRouteDestination:
+UPDATE Route SET
+    destinationDir = :destinationDir,
+    destinationLatitude = :destinationLatitude,
+    destinationLongitude = :destinationLongitude,
+    destinationPlaceId = :destinationPlaceId,
+    isSynced = 0
+WHERE id = :id AND isDeleted = 0;
+
 softDelete:
 UPDATE Route SET
     isDeleted = 1,

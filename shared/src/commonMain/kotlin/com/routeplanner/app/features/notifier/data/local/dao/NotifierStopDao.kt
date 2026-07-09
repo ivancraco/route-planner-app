@@ -1,9 +1,9 @@
-package com.routeplanner.app.features.common.data.database.dao
+package com.routeplanner.app.features.notifier.data.local.dao
 
 import com.routeplanner.app.features.common.data.database.DbHelper
 
-class RouteDao(
+class NotifierStopDao(
     private val dbHelper: DbHelper
 ) {
-    fun clearDatabase() {}
+
 }

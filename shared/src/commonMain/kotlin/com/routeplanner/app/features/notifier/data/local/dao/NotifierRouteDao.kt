@@ -3,6 +3,7 @@ package com.routeplanner.app.features.notifier.data.local.dao
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import app.cash.sqldelight.coroutines.mapToOneOrNull
 import com.routeplanner.app.features.common.data.database.DbHelper
 import com.routeplanner.app.features.notifier.data.local.mapper.routeEntityMapper
 import com.routeplanner.app.features.notifier.data.local.mapper.stopEntityMapper
@@ -13,16 +14,43 @@ import com.routeplanner.app.features.notifier.data.model.NotifierRouteEntity
 import com.routeplanner.app.features.notifier.data.remote.dto.NotifierRouteSync
 import com.routeplanner.app.features.notifier.domain.model.NotifierRoute
 import com.routeplanner.app.features.notifier.domain.model.NotifierRouteSummary
+import com.routeplanner.app.features.notifier.domain.model.RouteStateEnum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 class NotifierRouteDao(
     private val dbHelper: DbHelper
 ) {
+    fun observeRoute(
+        id: Long
+    ): Flow<NotifierRoute?> {
+        return dbHelper.withDatabaseFlow { database ->
+            /*val stops = database.stopQueries
+                .selectStopsWithDetailsByRouteId(id)
+                .awaitAsList()
+                .map { it.toNotifierStop() }*/
+
+            val stopsFlow = database.stopQueries
+                .selectStopsWithDetailsByRouteId(id)
+                .asFlow()
+                .mapToList(Dispatchers.Default)
+                .map { list -> list.map { it.toNotifierStop() } }
+
+            val routeFlow = database.routeQueries
+                .selectRouteWithState(id)
+                .asFlow()
+                .mapToOneOrNull(Dispatchers.Default)
+
+            combine(routeFlow, stopsFlow) { route, stops ->
+                route?.toNotifierRoute(stops)
+            }
+        }
+    }
     suspend fun insertRoute(
         routeEntity: NotifierRouteEntity
-    ): NotifierRoute {
+    ): Long {
         return dbHelper.withDatabase { database ->
             database.routeQueries.insert(
                 userId = routeEntity.userId,
@@ -38,33 +66,33 @@ class NotifierRouteDao(
                 destinationLatitude = routeEntity.destinationLatitude,
                 destinationLongitude = routeEntity.destinationLongitude
             )
-            val id = database.routeQueries.lastInsertRowId().executeAsOne()
+            database.routeQueries.lastInsertRowId().executeAsOne()
+            /*val id = database.routeQueries.lastInsertRowId().executeAsOne()
             val stops = database.stopQueries
                 .selectStopsWithDetailsByRouteId(id)
                 .awaitAsList()
                 .map { it.toNotifierStop() }
             database.routeQueries.selectRouteWithState(id).executeAsOne()
-                .toNotifierRoute(stops)
+                .toNotifierRoute(stops)*/
         }
     }
 
     suspend fun updateRoute(
-        notifierRouteItem: NotifierRoute,
-        stateId: Long
+        notifierRoute: NotifierRoute
     ) {
         dbHelper.withDatabase { database ->
             database.routeQueries.update(
-                id = notifierRouteItem.id,
-                stateId = stateId,
-                name = notifierRouteItem.name,
-                originDir = notifierRouteItem.originDir,
-                originPlaceId = notifierRouteItem.originPlaceId,
-                originLatitude = notifierRouteItem.originLatitude,
-                originLongitude = notifierRouteItem.originLongitude,
-                destinationDir = notifierRouteItem.destinationDir,
-                destinationPlaceId = notifierRouteItem.destinationPlaceId,
-                destinationLatitude = notifierRouteItem.destinationLatitude,
-                destinationLongitude = notifierRouteItem.destinationLongitude
+                id = notifierRoute.id,
+                stateId = RouteStateEnum.fromName(notifierRoute.state).id,
+                name = notifierRoute.name,
+                originDir = notifierRoute.originDir,
+                originPlaceId = notifierRoute.originPlaceId,
+                originLatitude = notifierRoute.originLatitude,
+                originLongitude = notifierRoute.originLongitude,
+                destinationDir = notifierRoute.destinationDir,
+                destinationPlaceId = notifierRoute.destinationPlaceId,
+                destinationLatitude = notifierRoute.destinationLatitude,
+                destinationLongitude = notifierRoute.destinationLongitude
             )
         }
     }
@@ -116,19 +144,6 @@ class NotifierRouteDao(
                 .mapToList(Dispatchers.Default)
                 .map { it.map { route -> route.toNotifierRouteSummary() } }
         }
-
-    suspend fun selectById(
-        id: Long
-    ): NotifierRoute {
-        return dbHelper.withDatabase { database ->
-            val stops = database.stopQueries
-                .selectStopsWithDetailsByRouteId(id)
-                .awaitAsList()
-                .map { it.toNotifierStop() }
-            val route = database.routeQueries.selectRouteWithState(id).executeAsOne()
-            route.toNotifierRoute(stops)
-        }
-    }
 
     suspend fun selectByUserId(
         userId: Long

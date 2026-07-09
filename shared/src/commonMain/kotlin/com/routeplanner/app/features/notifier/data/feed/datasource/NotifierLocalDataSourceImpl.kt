@@ -10,22 +10,22 @@ import kotlinx.coroutines.flow.Flow
 class NotifierLocalDataSourceImpl(
     private val notifierRouteDao: NotifierRouteDao,
 ): NotifierLocalDataSource {
+    override fun observeRoute(id: Long): Flow<NotifierRoute?> {
+        return notifierRouteDao.observeRoute(id = id)
+    }
+
     override suspend fun insertRoute(
         routeEntity: NotifierRouteEntity
-    ): NotifierRoute {
+    ): Long {
         return notifierRouteDao.insertRoute(
             routeEntity = routeEntity
         )
     }
 
     override suspend fun updateRoute(
-        notifierRoute: NotifierRoute,
-        stateId: Long
+        notifierRoute: NotifierRoute
     ) {
-        notifierRouteDao.updateRoute(
-            notifierRouteItem = notifierRoute,
-            stateId = stateId
-        )
+        notifierRouteDao.updateRoute(notifierRoute = notifierRoute)
     }
 
     override suspend fun updateName(id: Long, name: String) {
@@ -48,10 +48,6 @@ class NotifierLocalDataSourceImpl(
 
     override suspend fun selectAll(): List<NotifierRoute> {
         return notifierRouteDao.selectAll()
-    }
-
-    override suspend fun selectById(id: Long): NotifierRoute {
-        return notifierRouteDao.selectById(id = id)
     }
 
     override suspend fun selectByUserId(userId: Long): List<NotifierRoute> {

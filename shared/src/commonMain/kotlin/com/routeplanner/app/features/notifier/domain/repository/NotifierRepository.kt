@@ -7,13 +7,13 @@ import com.routeplanner.app.features.notifier.domain.model.NotifierRouteSummary
 import kotlinx.coroutines.flow.Flow
 
 interface NotifierRepository {
-    suspend fun insertRoute(routeEntity: NotifierRouteEntity): NotifierRoute
-    suspend fun updateRoute(notifierRouteItem: NotifierRoute, stateId: Long)
+    fun observeRoute(id: Long): Flow<NotifierRoute?>
+    suspend fun insertRoute(routeEntity: NotifierRouteEntity): Long
+    suspend fun updateRoute(notifierRouteItem: NotifierRoute)
     suspend fun updateName(id: Long, name: String)
     suspend fun updateState(id: Long, stateId: Long)
     suspend fun softDelete(id: Long)
     suspend fun selectAll(): Result<List<NotifierRoute>>
-    suspend fun selectById(id: Long): Result<NotifierRoute>
     suspend fun selectByUserId(userId: Long): Result<List<NotifierRoute>>
     suspend fun selectPendingSync(): Result<List<NotifierRoute>>
     suspend fun selectPendingDelete(): Result<List<NotifierRoute>>

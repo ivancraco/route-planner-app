@@ -12,21 +12,24 @@ class NotifierRepositoryImpl(
     private val notifierLocalDataSource: NotifierLocalDataSource,
     //private val notifierRemoteDataSource: NotifierRemoteDataSource
 ): NotifierRepository {
+
+    override fun observeRoute(id: Long): Flow<NotifierRoute?> {
+        return notifierLocalDataSource.observeRoute(id = id)
+    }
+
     override suspend fun insertRoute(
         routeEntity: NotifierRouteEntity
-    ): NotifierRoute {
+    ): Long {
         return notifierLocalDataSource.insertRoute(
             routeEntity = routeEntity
         )
     }
 
     override suspend fun updateRoute(
-        notifierRouteItem: NotifierRoute,
-        stateId: Long
+        notifierRouteItem: NotifierRoute
     ) {
         notifierLocalDataSource.updateRoute(
-            notifierRoute = notifierRouteItem,
-            stateId = stateId
+            notifierRoute = notifierRouteItem
         )
     }
 
@@ -51,15 +54,6 @@ class NotifierRepositoryImpl(
     override suspend fun selectAll(): Result<List<NotifierRoute>> {
         try {
             val routes = notifierLocalDataSource.selectAll()
-            return Result.success(routes)
-        } catch (e: Exception) {
-            return Result.failure(e)
-        }
-    }
-
-    override suspend fun selectById(id: Long): Result<NotifierRoute> {
-        try {
-            val routes = notifierLocalDataSource.selectById(id = id)
             return Result.success(routes)
         } catch (e: Exception) {
             return Result.failure(e)

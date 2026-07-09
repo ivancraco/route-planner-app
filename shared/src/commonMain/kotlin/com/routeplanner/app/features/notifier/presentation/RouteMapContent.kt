@@ -159,8 +159,12 @@ fun RouteMap(
         modifier = modifier,
         cameraPosition = CameraPosition(
             coordinates =
-                if (coordinates != null) Coordinates(coordinates.latitude, longitude = coordinates.longitude)
-                else Coordinates(latitude = -31.388881, longitude = -58.013577),
+                Coordinates(
+                    -31.39676517404372,
+                    -58.01713884030075,
+                ),
+                /*if (coordinates != null) Coordinates(coordinates.latitude, longitude = coordinates.longitude)
+                else Coordinates(latitude = -31.388881, longitude = -58.013577),*/
             zoom = 13.8f
         ),
         properties = MapProperties(

@@ -509,7 +509,7 @@ private fun RouteSheetContent(
                 item {
                     StopRow(
                         direction = route.originDir,
-                        color = MarkerColors.origin,
+                        color = Color.Blue,
                         onClick = { onSearchStop() },
                     )
                     VerticalDivider(
@@ -534,7 +534,7 @@ private fun RouteSheetContent(
                 item {
                     StopRow(
                         direction = route.destinationDir,
-                        color = MarkerColors.origin,
+                        color = Color.Green,
                         onClick = { onSearchStop() },
                     )
                 }
@@ -581,10 +581,16 @@ private fun RouteSheetContent(
 // ---------------------------------------------------------------------------
 
 @Composable
-private fun StopRow(direction: String, color: Color, onClick: () -> Unit) {
+private fun StopRow(
+    direction: String,
+    color: Color,
+    label: String = "",
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd))
             .clickable { onClick() }
             .padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -594,16 +600,21 @@ private fun StopRow(direction: String, color: Color, onClick: () -> Unit) {
             modifier = Modifier
                 .size(10.dp)
                 .clip(CircleShape)
-                .background(RoutePlannerTheme.colors.onPrimary),
+                .background(color),
         )
-
         Text(
             text = direction,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = RoutePlannerTheme.typography.bodyMedium,
+            color = RoutePlannerTheme.colors.onPrimary,
             modifier = Modifier.weight(1f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = label,
+            style = RoutePlannerTheme.typography.labelMedium,
+            color = RoutePlannerTheme.colors.onPrimary.copy(0.5f),
         )
     }
 }
@@ -701,13 +712,38 @@ fun ConfirmDeleteRouteDialog(
                     )
                     .padding(16.dp)
         ) {
-            Text(text = "¿Eliminar ruta?")
-            Row {
-                Button(onClick = onDelete) {
-                    Text(text = "Eliminar")
-                }
-                Button(onClick = onDismiss) {
+            Text(
+                text = "¿Eliminar ruta?",
+                style = RoutePlannerTheme.typography.titleLarge,
+                color = RoutePlannerTheme.colors.onPrimary
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { onDismiss() },
+                    colors = ButtonColors(
+                        containerColor = MaterialTheme.colorScheme.onPrimary,
+                        contentColor = MaterialTheme.colorScheme.secondaryContainer,
+                        disabledContainerColor = MaterialTheme.colorScheme.onPrimary,
+                        disabledContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
                     Text(text = "Cancelar")
+                }
+                Button(
+                    onClick = { onDelete() },
+                    colors = ButtonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = Color.White,
+                        disabledContainerColor = MaterialTheme.colorScheme.onPrimary,
+                        disabledContentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Text(
+                        text = "Aceptar",
+                        color = Color.White
+                    )
                 }
             }
         }
@@ -746,7 +782,8 @@ fun EditRouteName(
         ) {
             Text(
                 text = title,
-                fontWeight = FontWeight.Bold
+                style = RoutePlannerTheme.typography.titleLarge,
+                color = RoutePlannerTheme.colors.onPrimary
             )
             Column(
                 modifier = Modifier.fillMaxWidth()
@@ -822,12 +859,15 @@ fun EditRouteName(
                     },
                     colors = ButtonColors(
                         containerColor = MaterialTheme.colorScheme.secondary,
-                        contentColor = MaterialTheme.colorScheme.primary,
+                        contentColor = Color.White,
                         disabledContainerColor = MaterialTheme.colorScheme.onPrimary,
                         disabledContentColor = MaterialTheme.colorScheme.onPrimary
                     )
                 ) {
-                    Text(text = "Aceptar")
+                    Text(
+                        text = "Aceptar",
+                        color = Color.White
+                    )
                 }
             }
         }

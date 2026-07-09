@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -30,7 +31,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,34 +40,48 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.routeplanner.app.features.notifier.data.model.NotifierRouteEntity
+import com.routeplanner.app.features.notifier.domain.model.AddressSearchState
 import com.routeplanner.app.features.notifier.location.LocationCoordinates
+import com.routeplanner.app.features.notifier.places.AddressSuggestion
+import com.routeplanner.app.features.notifier.places.SelectedAddress
+import com.routeplanner.app.features.notifier.presentation.navigation.AddressType
 import com.routeplanner.app.ui.RoutePlannerTheme
 import kotlin.time.Clock
 
 @Composable
 fun CreateRouteScreen(
-    originLatitude: Double?,
-    originLongitude: Double?,
-    destinationLatitude: Double?,
-    destinationLongitude: Double?,
+    placesState: AddressSearchState,
+    originLatitude: Double = -31.39676517404372,
+    originLongitude: Double = -58.01713884030075,
     onDismiss: () -> Unit,
     onRequestLocationPermission: () -> Unit,
     onPickAddress: (forOrigin: Boolean) -> Unit,
+    onFindDirections: (String) -> Unit,
     onCreateRoute: (NotifierRouteEntity) -> Unit,
+    onValueChange: (String) -> Unit,
+    onClear: () -> Unit,
+    onSuggestionSelected: (AddressSuggestion, (SelectedAddress) -> Unit) -> Unit,
 ) {
+    var addressType by remember { mutableStateOf("") }
     var showSelectionDialog by remember { mutableStateOf(false) }
     var showFindDirectionsDialog by remember { mutableStateOf(false) }
-    var isLocationPermissionGranted by remember { mutableStateOf(originLatitude != null && originLongitude != null) }
+    var isLocationPermissionGranted by remember { mutableStateOf(true) }
     var state by remember {
         mutableStateOf(
             CreateRouteState(
-                origin = initialSelectionFor(
-                    originLatitude,
-                    originLongitude
+                origin = ManualAddress(
+                    address = "Municipalidad de Concordia",
+                    coordinates = LocationCoordinates(
+                        latitude = originLatitude,
+                        longitude = originLongitude
+                    )
                 ),
-                destination = initialSelectionFor(
-                    originLatitude,
-                    originLongitude
+                destination = ManualAddress(
+                    address = "Municipalidad de Concordia",
+                    coordinates = LocationCoordinates(
+                        latitude = originLatitude,
+                        longitude = originLongitude
+                    )
                 ),
             )
         )
@@ -77,7 +91,7 @@ fun CreateRouteScreen(
     // vuelve de Settings, por ejemplo), promovemos automáticamente el
     // selector de Origen a "usando ubicación actual" — solo si todavía
     // no eligió una dirección manual a propósito.
-    LaunchedEffect(isLocationPermissionGranted, originLatitude, originLongitude) {
+    /*LaunchedEffect(isLocationPermissionGranted, originLatitude, originLongitude) {
         if (isLocationPermissionGranted && originLatitude != null && originLongitude != null &&
             state.origin is LocationSelection.PermissionRequired
         ) {
@@ -96,7 +110,7 @@ fun CreateRouteScreen(
                 ),
             )
         }
-    }
+    }*/
 
     Column(
         modifier = Modifier
@@ -123,7 +137,11 @@ fun CreateRouteScreen(
                     .align(Alignment.CenterStart)
                     .size(RoutePlannerTheme.dimens.iconSizeMd),
             ) {
-
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Cerrar",
+                    tint = RoutePlannerTheme.colors.onPrimary,
+                )
             }
         }
 
@@ -136,10 +154,10 @@ fun CreateRouteScreen(
         // ── Origen ───────────────────────────────────────────────
         LocationSelectorField(
             label = "Origen",
-            selection = state.origin,
+            selection = state.origin.address,
             onUseCurrentLocation = {
-                state =
-                    if (isLocationPermissionGranted && originLatitude != null && originLongitude != null) {
+                /*state =
+                    if (isLocationPermissionGranted) {
                         state.copy(
                             origin = LocationSelection.UsingCurrentLocation(
                                 LocationCoordinates(
@@ -150,20 +168,24 @@ fun CreateRouteScreen(
                         )
                     } else {
                         state.copy(origin = LocationSelection.PermissionRequired)
-                    }
+                    }*/
             },
             onRequestPermission = onRequestLocationPermission,
             onPickAddress = { onPickAddress(true) },
-            onSelectionChange = { showSelectionDialog = true }
+            onSelectionChange = {
+                //showSelectionDialog = true
+                showFindDirectionsDialog = true
+                addressType = AddressType.ROUTE_ORIGIN.type
+            }
         )
 
         // ── Destino ──────────────────────────────────────────────
         LocationSelectorField(
             label = "Destino",
-            selection = state.destination,
+            selection = state.destination.address,
             onUseCurrentLocation = {
-                state =
-                    if (isLocationPermissionGranted && originLatitude != null && originLongitude != null) {
+                /*state =
+                    if (isLocationPermissionGranted) {
                         state.copy(
                             destination = LocationSelection.UsingCurrentLocation(
                                 LocationCoordinates(
@@ -174,28 +196,32 @@ fun CreateRouteScreen(
                         )
                     } else {
                         state.copy(destination = LocationSelection.PermissionRequired)
-                    }
+                    }*/
             },
             onRequestPermission = onRequestLocationPermission,
             onPickAddress = { onPickAddress(false) },
-            onSelectionChange = { showSelectionDialog = true }
+            onSelectionChange = {
+                //showSelectionDialog = true
+                showFindDirectionsDialog = true
+                addressType = AddressType.ROUTE_DESTINATION.type
+            }
         )
 
         // ── Botón crear ──────────────────────────────────────────
         Button(
             onClick = {
-                val originCoordinates = state.origin.coordinatesOrNull()
-                val destinationCoordinates = state.destination.coordinatesOrNull()
-                if (state.isValid && originCoordinates != null && destinationCoordinates != null) {
+                val originCoordinates = state.origin.coordinates
+                val destinationCoordinates = state.destination.coordinates
+                if (state.isValid) {
                     val notifierRouteEntity = NotifierRouteEntity(
                         userId = 1,
                         stateId = 1,
                         name = state.name,
                         createdAt = Clock.System.now(),
-                        originDir = "Origen",
+                        originDir = state.origin.address,
                         originLatitude = originCoordinates.latitude,
                         originLongitude = originCoordinates.longitude,
-                        destinationDir = "Destino",
+                        destinationDir = state.destination.address,
                         destinationLatitude = destinationCoordinates.latitude,
                         destinationLongitude = destinationCoordinates.longitude,
                     )
@@ -229,13 +255,50 @@ fun CreateRouteScreen(
                 onFindDirections = {
                     showSelectionDialog = false
                     showFindDirectionsDialog = true
+                    //onFindDirections(addressType)
                 }
             )
         }
 
         if (showFindDirectionsDialog) {
-            FindDirectionsScreen(
-                onDismiss = { showFindDirectionsDialog = false },
+            AddressSearchField(
+                //addressType = addressType,
+                state = placesState,
+                onAddressSelected = { suggestion, selected ->
+                    when (addressType) {
+                        AddressType.ROUTE_ORIGIN.type -> {
+                            state = state.copy(
+                                origin = ManualAddress(
+                                    address = suggestion.primaryText,
+                                    coordinates = LocationCoordinates(
+                                        latitude = selected.latitude,
+                                        longitude = selected.longitude
+                                    )
+                                )
+                            )
+                        }
+
+                        AddressType.ROUTE_DESTINATION.type -> {
+                            state = state.copy(
+                                destination = ManualAddress(
+                                    address = suggestion.primaryText,
+                                    coordinates = LocationCoordinates(
+                                        latitude = selected.latitude,
+                                        longitude = selected.longitude
+                                    )
+                                )
+                            )
+                        }
+                    }
+                },
+                onValueChange = {
+                    onValueChange(it)
+                },
+                clear = {
+                    onClear()
+                },
+                onSuggestionSelected = onSuggestionSelected,
+                onDismiss = { showFindDirectionsDialog = false }
             )
         }
     }
@@ -286,10 +349,11 @@ private fun RouteTextField(
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
     )
 }
+
 @Composable
 private fun LocationSelectorField(
     label: String,
-    selection: LocationSelection,
+    selection: String,
     onUseCurrentLocation: () -> Unit,
     onRequestPermission: () -> Unit,
     onPickAddress: () -> Unit,
@@ -315,7 +379,7 @@ private fun LocationSelectorField(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm),
         ) {
-            when (selection) {
+            /*when (selection) {
                 is LocationSelection.UsingCurrentLocation -> {
                     Icon(
                         imageVector = Icons.Default.LocationOn,
@@ -354,7 +418,18 @@ private fun LocationSelectorField(
                         color = RoutePlannerTheme.colors.onPrimary,
                     )
                 }
-            }
+            }*/
+            Icon(
+                imageVector = Icons.Default.LocationOn,
+                contentDescription = null,
+                tint = RoutePlannerTheme.colors.onPrimary,
+                modifier = Modifier.size(RoutePlannerTheme.dimens.iconSizeSm),
+            )
+            Text(
+                text = selection,
+                style = RoutePlannerTheme.typography.bodyMedium,
+                color = RoutePlannerTheme.colors.onPrimary,
+            )
         }
     }
 }

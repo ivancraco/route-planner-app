@@ -2,9 +2,12 @@ package com.routeplanner.app.features.notifier.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,11 +32,11 @@ enum class MarkerType {
 
 // Paleta de colores centralizada
 object MarkerColors {
-    val origin      = Color(0xFF34A853)
+    val origin = Color(0xFF34A853)
     val destination = Color(0xFFEA4335)
-    val waypoint    = Color(0xFF1A73E8)
-    val white       = Color.White
-    val shadow      = Color(0x33000000)
+    val waypoint = Color(0xFF1A73E8)
+    val white = Color.White
+    val shadow = Color(0x33000000)
 }
 
 // ---------------------------------------------------------------------------
@@ -48,7 +51,7 @@ fun OriginMarker() {
                 .size(24.dp)
                 .shadow(4.dp, CircleShape)
                 .clip(CircleShape)
-                .background(RoutePlannerTheme.colors.secondary)
+                .background(Color.Blue)
                 .border(2.dp, MarkerColors.white, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
@@ -118,9 +121,9 @@ fun WaypointMarker(order: Int) {
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text       = order.toString(),
-                color      = MarkerColors.white,
-                fontSize   = 14.sp,
+                text = order.toString(),
+                color = MarkerColors.white,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
             )
         }
@@ -138,8 +141,9 @@ fun WaypointMarker(order: Int) {
 // ---------------------------------------------------------------------------
 
 object MarkerContentId {
-    const val ORIGIN      = "origin"
+    const val ORIGIN = "origin"
     const val DESTINATION = "destination"
+
     // Para waypoints: "waypoint_1", "waypoint_2", etc.
     fun waypoint(order: Int) = "waypoint_$order"
 }

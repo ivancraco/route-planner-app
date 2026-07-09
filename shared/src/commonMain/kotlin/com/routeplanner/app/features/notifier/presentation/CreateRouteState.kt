@@ -34,13 +34,13 @@ sealed class LocationSelection {
 
 data class CreateRouteState(
     val name: String = "",
-    val origin: LocationSelection = LocationSelection.Empty,
-    val destination: LocationSelection = LocationSelection.Empty,
+    val origin: ManualAddress,
+    val destination: ManualAddress,
 ) {
     val isValid: Boolean
         get() = name.isNotBlank() &&
-                origin.hasCoordinates() &&
-                destination.hasCoordinates()
+                origin.address != "" &&
+                destination.address != ""
 }
 
 private fun LocationSelection.hasCoordinates(): Boolean = when (this) {
@@ -58,3 +58,8 @@ fun LocationSelection.coordinatesOrNull(): LocationCoordinates? = when (this) {
     LocationSelection.Empty,
     LocationSelection.PermissionRequired -> null
 }
+
+data class ManualAddress(
+    val address: String,
+    val coordinates: LocationCoordinates,
+)

@@ -2,6 +2,22 @@ package com.routeplanner.app.features.notifier.domain.model
 
 import kotlin.time.Instant
 
+enum class RouteStateEnum(val id: Long, val description: String) {
+    ACTIVE(1, "EN CURSO"),
+    FINISHED(2, "FINALIZADA"),
+    CANCELED(3, "CANCELADA");
+
+    companion object {
+        fun fromName(name: String): RouteStateEnum =
+            entries.find { it.name == name }
+                ?: throw IllegalArgumentException("Unknown route state: $name")
+
+        fun fromId(id: Long): RouteStateEnum =
+            entries.find { it.id == id }
+                ?: throw IllegalArgumentException("Unknown route state id: $id")
+    }
+}
+
 data class NotifierRoute(
     val id: Long,
     //val userId: Long,

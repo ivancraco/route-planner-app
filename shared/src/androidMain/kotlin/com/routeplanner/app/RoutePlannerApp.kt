@@ -1,8 +1,8 @@
 package com.routeplanner.app
 
 import android.app.Application
-import com.routeplanner.app.dbFactory.DatabaseFactory
-import com.routeplanner.app.di.initKoin
+import com.routeplanner.app.core.dbFactory.DatabaseFactory
+import com.routeplanner.app.core.di.initKoin
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 

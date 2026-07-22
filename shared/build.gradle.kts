@@ -80,12 +80,14 @@ kotlin {
             //SqlDelight
             implementation(libs.primitive.adapters)
             implementation(libs.sqldelight.coroutines.extensions)
-
             //Maps
             implementation(libs.kmp.maps.core)
             //Moko Permissions
             implementation(libs.permissions.location)
             implementation(libs.permissions.compose)
+            //Connectivity
+            implementation("dev.jordond.connectivity:connectivity-core:2.4.1")
+            implementation("dev.jordond.connectivity:connectivity-device:2.4.1")
         }
         iosMain.dependencies {
             //Ktor client

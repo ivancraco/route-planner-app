@@ -42,6 +42,8 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.routeplanner.app.core.ui.RoutePlannerTheme
 import com.routeplanner.app.features.home.data.model.NotifierRouteEntity
 import com.routeplanner.app.features.home.domain.model.AddressSearchState
+import com.routeplanner.app.features.home.domain.model.NotifierRoute
+import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.location.LocationCoordinates
 import com.routeplanner.app.features.home.places.AddressSuggestion
 import com.routeplanner.app.features.home.places.SelectedAddress
@@ -57,7 +59,7 @@ fun CreateRouteScreen(
     onRequestLocationPermission: () -> Unit,
     onPickAddress: (forOrigin: Boolean) -> Unit,
     onFindDirections: (String) -> Unit,
-    onCreateRoute: (NotifierRouteEntity) -> Unit,
+    onCreateRoute: (NotifierRoute) -> Unit,
     onValueChange: (String) -> Unit,
     onClear: () -> Unit,
     onSuggestionSelected: (AddressSuggestion, (SelectedAddress) -> Unit) -> Unit,
@@ -213,19 +215,22 @@ fun CreateRouteScreen(
                 val originCoordinates = state.origin.coordinates
                 val destinationCoordinates = state.destination.coordinates
                 if (state.isValid) {
-                    val notifierRouteEntity = NotifierRouteEntity(
-                        userId = 1,
-                        stateId = 1,
+                    val notifierRoute = NotifierRoute(
+                        id = 0,
                         name = state.name,
+                        state = RouteStateEnum.ACTIVE.name,
                         createdAt = Clock.System.now(),
                         originDir = state.origin.address,
+                        originPlaceId = null,
                         originLatitude = originCoordinates.latitude,
                         originLongitude = originCoordinates.longitude,
                         destinationDir = state.destination.address,
+                        destinationPlaceId = null,
                         destinationLatitude = destinationCoordinates.latitude,
                         destinationLongitude = destinationCoordinates.longitude,
+                        notifierStops = listOf()
                     )
-                    onCreateRoute(notifierRouteEntity)
+                    onCreateRoute(notifierRoute)
                     onDismiss()
                 }
             },

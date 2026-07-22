@@ -2,10 +2,19 @@ package com.routeplanner.app
 
 import com.routeplanner.app.core.dbFactory.DatabaseFactory
 import com.routeplanner.app.core.di.initKoin
+import com.routeplanner.app.core.utils.SyncManager
 import org.koin.dsl.module
+import org.koin.mp.KoinPlatform
 
 val iosModules = module {
     single { DatabaseFactory() }
 }
 
-fun initKoinIOS() = initKoin(additionalModules = listOf(iosModules))
+fun initKoinIOS() {
+    initKoin(additionalModules = listOf(iosModules))
+    KoinPlatform.getKoin().get<SyncManager>().start()
+}
+
+fun onAppForeground() {
+    KoinPlatform.getKoin().get<SyncManager>().syncNowAsync()
+}

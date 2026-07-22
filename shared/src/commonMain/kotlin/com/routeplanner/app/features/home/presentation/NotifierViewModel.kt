@@ -150,12 +150,12 @@ class NotifierViewModel(
     fun clearRoute() {
         _selectedRouteId.value = null
     }
-    fun createRoute(routeEntity: NotifierRouteEntity) {
-        /*viewModelScope.launch(Dispatchers.Default) {
-            val id = notifierRepository.insertRoute(routeEntity)
+    fun createRoute(route: NotifierRoute) {
+        viewModelScope.launch(Dispatchers.Default) {
+            val id = notifierRepository.insertRoute(route, 1)
             selectRoute(id)
             //route.value = result
-        }*/
+        }
     }
 
     fun getAllRoutes() {

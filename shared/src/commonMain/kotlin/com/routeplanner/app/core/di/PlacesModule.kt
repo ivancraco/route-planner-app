@@ -10,7 +10,7 @@ import org.koin.dsl.module
 data class PlacesApiKey(val value: String)
 
 fun placesModule() = module {
-    single { PlacesApiKey("AIzaSyA5QPiy9q4BsEaqWvrBswfRaL9nzmIO1c0") }
+    single { PlacesApiKey("") }
     single { PlacesAutocompleteApi(get(), get<PlacesApiKey>().value) }
     single { PlacesDetailsApi(get(), get<PlacesApiKey>().value) }
     single { PlacesSessionTokenProvider() }

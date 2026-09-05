@@ -1,5 +1,6 @@
 package com.routeplanner.app.core.di
 
+import com.routeplanner.app.features.auth.di.authModule
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.dsl.KoinAppDeclaration
@@ -9,5 +10,8 @@ fun initKoin(
     appDeclaration: KoinAppDeclaration = {},
 ) = startKoin {
     appDeclaration()
-    modules(additionalModules + cacheModule() + dataModule() + networkModule() + placesModule() + viewModelModule())
+    modules(
+        additionalModules + cacheModule() + dataModule() +
+                networkModule() + placesModule() + viewModelModule() + authModule()
+    )
 }

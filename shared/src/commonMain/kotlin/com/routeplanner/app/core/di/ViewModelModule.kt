@@ -7,8 +7,11 @@ import org.koin.dsl.module
 fun viewModelModule() = module {
     viewModel {
         NotifierViewModel(
-            notifierRepository = get(),
-            repository = get(),
-            locationBiasProvider = { null })
+            routeRepository = get(),
+            stopRepository = get(),
+            sessionLocalDataSource = get(),
+            repository = get()
+            //locationBiasProvider = { null }
+        )
     }
 }

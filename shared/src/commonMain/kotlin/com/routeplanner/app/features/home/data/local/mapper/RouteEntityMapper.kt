@@ -3,14 +3,14 @@ package com.routeplanner.app.features.home.data.local.mapper
 import com.routeplanner.app.Route
 import com.routeplanner.app.SelectRouteSummaries
 import com.routeplanner.app.SelectRouteWithState
-import com.routeplanner.app.features.home.domain.model.NotifierRoute
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
-import com.routeplanner.app.features.home.domain.model.NotifierStop
+import com.routeplanner.app.features.home.domain.model.UserStop
+import com.routeplanner.app.features.home.domain.model.UserRoute
 
 fun Route.routeEntityMapper(
     state: String,
-    notifierStops: List<NotifierStop>
-) = NotifierRoute(
+    userStops: List<UserStop>
+) = UserRoute(
     id = id,
     state = state,
     name = name,
@@ -23,13 +23,13 @@ fun Route.routeEntityMapper(
     destinationPlaceId = destinationPlaceId,
     destinationLatitude = destinationLatitude,
     destinationLongitude = destinationLongitude,
-    notifierStops = notifierStops
+    userStops = userStops
 )
 
-fun SelectRouteWithState.toNotifierRoute(
-    notifierStops: List<NotifierStop>
-): NotifierRoute =
-    NotifierRoute(
+fun SelectRouteWithState.toUserRoute(
+    userStops: List<UserStop>
+): UserRoute =
+    UserRoute(
         id = id,
         state = stateDescription,
         name = name,
@@ -42,10 +42,10 @@ fun SelectRouteWithState.toNotifierRoute(
         destinationPlaceId = destinationPlaceId,
         destinationLatitude = destinationLatitude,
         destinationLongitude = destinationLongitude,
-        notifierStops = notifierStops
+        userStops = userStops
     )
 
-fun SelectRouteSummaries.toNotifierRouteSummary(): NotifierRouteSummary =
+fun SelectRouteSummaries.toUserRouteSummary(): NotifierRouteSummary =
     NotifierRouteSummary(
         id = id,
         name = name,

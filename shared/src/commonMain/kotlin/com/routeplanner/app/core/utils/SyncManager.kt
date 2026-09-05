@@ -1,54 +1,51 @@
 package com.routeplanner.app.core.utils
 
 import com.routeplanner.app.SyncQueue
-import com.routeplanner.app.SyncQueueQueries
 import com.routeplanner.app.core.common.connectivity.ConnectivityObserver
 import com.routeplanner.app.core.common.data.database.DbHelper
-import com.routeplanner.app.features.home.domain.repository.NotifierRepository
+import com.routeplanner.app.features.home.domain.model.CreateRoute
+import com.routeplanner.app.features.home.domain.model.RouteStateEnum
+import com.routeplanner.app.features.home.domain.model.UpdateRoute
+import com.routeplanner.app.features.home.domain.repository.RouteRepository
+import com.routeplanner.app.features.home.domain.repository.StopRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlin.math.min
 import kotlin.math.pow
 
 class SyncManager(
     private val dbHelper: DbHelper,
-    private val routeRepository: NotifierRepository,
-    //private val stopRepository: StopRepository,
+    private val routeRepository: RouteRepository,
+    private val stopRepository: StopRepository,
     private val connectivityObserver: ConnectivityObserver,
     private val scope: CoroutineScope
 ) {
-
     private var syncJob: Job? = null
 
-    // Arranca el loop de sincronización, reacciona a cambios de conectividad
     fun start() {
         scope.launch {
             connectivityObserver.isConnected.collectLatest { connected ->
-                if (connected) {
-                    startSyncLoop()
-                } else {
-                    stopSyncLoop()
-                }
+                if (connected) startSyncLoop() else stopSyncLoop()
             }
         }
     }
 
-    fun stop() {
-        stopSyncLoop()
+    fun stop() = stopSyncLoop()
+
+    fun syncNowAsync() {
+        scope.launch { syncNow() }
     }
 
-    // Permite forzar una sincronización inmediata (ej: al volver de background)
-    suspend fun syncNow() {
+    private suspend fun syncNow() {
+        println("-----2-----")
         if (connectivityObserver.currentlyConnected()) {
+            println("-----3-----")
             processQueue()
         }
     }
-
-    // ─── Loop interno ──────────────────────────────────────────
 
     private fun startSyncLoop() {
         if (syncJob?.isActive == true) return
@@ -60,31 +57,31 @@ class SyncManager(
         }
     }
 
-    fun syncNowAsync() {
-        scope.launch { syncNow() }
-    }
-
     private fun stopSyncLoop() {
         syncJob?.cancel()
         syncJob = null
     }
 
-    // ─── Procesa toda la cola en orden ────────────────────────
-
     private suspend fun processQueue() {
-        val pending = dbHelper.withDatabase {  it.syncQueueQueries.selectAll().executeAsList() }
-        if (pending.isEmpty()) return
+        // Pendientes de subir
+        val pendingSync = dbHelper.withDatabase {
+            it.syncQueueQueries.selectAll().executeAsList()
+        }
+        if (pendingSync.isEmpty()) {
+            println("-----4-----")
+            return
+        }
 
-        for (item in pending) {
+        for (item in pendingSync) {
             if (item.retries >= SyncConfig.MAX_RETRIES) {
-                // Demasiados reintentos: se descarta para no bloquear la cola
-                dbHelper.withDatabase {  it.syncQueueQueries.deleteById(item.id) }
+                dbHelper.withDatabase { it.syncQueueQueries.deleteById(item.id) }
                 continue
             }
+            println("-----5-----")
             val success = processItem(item)
+            println("success: $success")
             if (!success) {
-                // Backoff exponencial: 2s, 4s, 8s, 16s, 32s (máx 60s)
-                val delay = min(
+                val delay = minOf(
                     SyncConfig.BASE_DELAY_MS * (2.0.pow(item.retries.toInt())).toLong(),
                     SyncConfig.MAX_DELAY_MS
                 )
@@ -93,41 +90,44 @@ class SyncManager(
         }
     }
 
-    // ─── Procesa un ítem individual ───────────────────────────
-
     private suspend fun processItem(item: SyncQueue): Boolean {
         return try {
             when (item.entity) {
                 SyncEntity.ROUTE -> processRouteItem(item)
-                SyncEntity.STOP  -> processStopItem(item)
-                else -> true // entidad desconocida, se descarta
+                SyncEntity.STOP -> processStopItem(item)
+                else -> Unit
             }
-            dbHelper.withDatabase {  it.syncQueueQueries.deleteById(item.id) }
+            dbHelper.withDatabase { it.syncQueueQueries.deleteById(item.id) }
             true
         } catch (e: Exception) {
-            dbHelper.withDatabase {  it.syncQueueQueries.incrementRetry(
-                last_error = e.message,
-                id = item.id
-            )}
+            println("error: ${e.stackTraceToString()}")
+            dbHelper.withDatabase {
+                it.syncQueueQueries.incrementRetry(
+                    last_error = e.message,
+                    id = item.id
+                )
+            }
             false
         }
     }
 
-    // ─── Operaciones por entidad ──────────────────────────────
-
     private suspend fun processRouteItem(item: SyncQueue) {
         when (item.operation) {
-            SyncOperation.INSERT,
+            SyncOperation.INSERT -> {
+                val route = routeRepository.selectById(item.entity_id)
+                    ?: return
+                routeRepository.insertRouteToApi(route)
+                routeRepository.markAsSynced(item.entity_id)
+            }
             SyncOperation.UPDATE -> {
-                val route = routeRepository.getLocalById(item.entity_id)
-                    ?: return // fue borrado localmente antes de sincronizar
-                routeRepository.pushToApi(route)
+                val route = routeRepository.selectById(item.entity_id)
+                    ?: return
+                routeRepository.updateRouteToApi(route)
                 routeRepository.markAsSynced(item.entity_id)
             }
             SyncOperation.DELETE -> {
-                routeRepository.deleteFromApi(item.entity_id)
-                //routeRepository.deletePermanently(item.entity_id)
-            }
+                routeRepository.deleteRouteToApi(item.entity_id)
+                routeRepository.deletePermanently(item.entity_id)            }
         }
     }
 
@@ -135,14 +135,17 @@ class SyncManager(
         when (item.operation) {
             SyncOperation.INSERT,
             SyncOperation.UPDATE -> {
-                /*val stop = stopRepository.getLocalById(item.entity_id.toInt())
+                val stop = stopRepository.selectById(item.entity_id)
                     ?: return
-                stopRepository.pushToApi(stop)
-                stopRepository.markAsSynced(item.entity_id.toInt())*/
+                stopRepository.pushToApi(stop, stop.routeId, item.operation)
+                stopRepository.markAsSynced(item.entity_id)
             }
             SyncOperation.DELETE -> {
-                /*stopRepository.deleteFromApi(item.entity_id.toInt())
-                stopRepository.deletePermanently(item.entity_id.toInt())*/
+                // selectById sin filtrar isDeleted, para poder leer el routeId
+                val stop = stopRepository.selectByIdIncludingDeleted(item.entity_id)
+                    ?: return
+                stopRepository.deleteFromApi(item.entity_id, stop.routeId)
+                stopRepository.deletePermanently(item.entity_id) // recién acá se borra físico
             }
         }
     }

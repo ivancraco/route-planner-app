@@ -24,6 +24,7 @@ class PlacesAutocompleteApi(
         val response = httpClient.post("https://places.googleapis.com/v1/places:autocomplete") {
             contentType(ContentType.Application.Json)
             header("X-Goog-Api-Key", apiKey)
+            header("X-Goog-FieldMask", "suggestions.placePrediction.text.text,suggestions.placePrediction.placeId")
             setBody(
                 AutocompleteRequest(
                     input = input,

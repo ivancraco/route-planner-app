@@ -1,7 +1,7 @@
 import kotlin.time.Instant;
 
 CREATE TABLE Route (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    id TEXT NOT NULL PRIMARY KEY,
     userId INTEGER NOT NULL,
     stateId INTEGER NOT NULL,
     name TEXT NOT NULL,
@@ -14,6 +14,7 @@ CREATE TABLE Route (
     destinationPlaceId TEXT,
     destinationLatitude REAL NOT NULL,
     destinationLongitude REAL NOT NULL,
+    encodedPolyline TEXT,
     isSynced INTEGER NOT NULL DEFAULT 0,
     isDeleted INTEGER NOT NULL DEFAULT 0,
 
@@ -24,6 +25,7 @@ CREATE TABLE Route (
 -- Queries
 insert:
 INSERT INTO Route (
+    id,
     userId,
     stateId,
     name,
@@ -35,8 +37,10 @@ INSERT INTO Route (
     destinationDir,
     destinationPlaceId,
     destinationLatitude,
-    destinationLongitude
+    destinationLongitude,
+    encodedPolyline
 ) VALUES (
+    :id,
     :userId,
     :stateId,
     :name,
@@ -48,7 +52,8 @@ INSERT INTO Route (
     :destinationDir,
     :destinationPlaceId,
     :destinationLatitude,
-    :destinationLongitude
+    :destinationLongitude,
+    :encodedPolyline
 );
 
 update:
@@ -77,6 +82,12 @@ UPDATE Route SET
     stateId = :stateId,
     isSynced = 0
 WHERE id = :id AND isDeleted = 0;
+
+updatePolyline:
+UPDATE Route SET
+    encodedPolyline = :encodedPolyline,
+    isSynced = 0
+WHERE id = :id;
 
 updateRouteOrigin:
 UPDATE Route SET
@@ -126,6 +137,9 @@ SELECT id, name, createdAt
 FROM Route
 WHERE isDeleted = 0
 ORDER BY createdAt DESC;
+
+deleteById:
+DELETE FROM Route WHERE id = :id;
 
 -- Sync queries
 selectPendingSync:

@@ -3,8 +3,8 @@ package com.routeplanner.app.features.home.presentation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.routeplanner.app.features.home.domain.model.NotifierRoute
-import com.routeplanner.app.features.home.domain.model.NotifierStop
+import com.routeplanner.app.features.home.domain.model.UserRoute
+import com.routeplanner.app.features.home.domain.model.UserStop
 import com.routeplanner.app.features.home.location.LocationCoordinates
 import com.swmansion.kmpmaps.core.AndroidMapProperties
 import com.swmansion.kmpmaps.core.CameraPosition
@@ -31,16 +31,16 @@ import com.swmansion.kmpmaps.core.Polyline
 
 @Composable
 fun buildCustomMarkerContent(
-    stops: NotifierRoute?,
+    stops: UserRoute?,
 ): kotlin.collections.Map<String, @Composable (Marker) -> Unit> {
     if (stops == null) return emptyMap()
     val content = mutableMapOf<String, @Composable (Marker) -> Unit>()
 
     content[MarkerContentId.ORIGIN] = { _ -> OriginMarker() }
     content[MarkerContentId.DESTINATION] = { _ -> DestinationMarker() }
-    stops.notifierStops.forEachIndexed { index, stop ->
-        val waypointOrder = index  // 0-based; el origen no se numera
-        val order = index + 1
+    stops.userStops.forEach { stop ->
+        //val waypointOrder = index  // 0-based; el origen no se numera
+        val order = stop.order
         val contentId = MarkerContentId.waypoint(order)
         content[contentId] = { _ -> WaypointMarker(order = order) }
     }
@@ -72,18 +72,38 @@ fun buildCustomMarkerContent(
 // ---------------------------------------------------------------------------
 // Convierte RouteStop → Marker de kmp-maps con su contentId asignado
 // ---------------------------------------------------------------------------
-fun NotifierStop.toKmpMarker(waypointOrder: Int): Marker =
-    Marker(
+fun UserStop.toKmpMarker(waypointOrder: Int): Marker {
+    val shortAddress = direction.split(",")
+        .firstOrNull()
+        ?.trim() ?: direction
+    return Marker(
         coordinates = Coordinates(
             latitude = latitude,
             longitude = longitude,
         ),
-        title = direction,
+        title = shortAddress,
         contentId = MarkerContentId.waypoint(waypointOrder)
     )
-fun NotifierRoute.toKmpMarkers(): List<Marker> {
-    var waypointCounter = 1
-    val stops = notifierStops.map { stop ->
+}
+
+fun UserRoute.toKmpMarkers(): List<Marker> {
+    val sortedStops = userStops.sortedBy { it.order }  // ← ordenar primero
+    val stopMarkers = sortedStops.map { stop ->
+        stop.toKmpMarker(waypointOrder = stop.order)
+    }
+    val result = mutableListOf<Marker>()
+    result.add(
+        Marker(
+            coordinates = Coordinates(originLatitude, originLongitude),
+            title = originDir,
+            contentId = MarkerContentId.ORIGIN
+        )
+    )
+    result.addAll(stopMarkers)
+    return result
+
+    /*var waypointCounter = 1
+    val stops = userStops.map { stop ->
         waypointCounter++
         stop.toKmpMarker(waypointOrder = stop.order.toInt())
     }
@@ -109,7 +129,7 @@ fun NotifierRoute.toKmpMarkers(): List<Marker> {
             contentId = MarkerContentId.DESTINATION
         )
     )
-    return result
+    return result*/
 }
 
 // ---------------------------------------------------------------------------
@@ -119,10 +139,10 @@ fun NotifierRoute.toKmpMarkers(): List<Marker> {
 @Composable
 fun RouteMap(
     modifier: Modifier = Modifier,
-    notifierRoute: NotifierRoute?,
+    userRoute: UserRoute?,
     routePolyline: List<Coordinates> = emptyList(),
     isMyLocationEnabled: Boolean = false,
-    onMarkerClick: (NotifierStop) -> Unit = {},
+    onMarkerClick: (UserStop) -> Unit = {},
     coordinates: LocationCoordinates?,
 ) {
     /*val initialCoords = stops.firstOrNull()?.coordinates
@@ -139,16 +159,14 @@ fun RouteMap(
     }*/
 
     // Construir markers y su contenido custom
-    val markers = notifierRoute?.toKmpMarkers()
-    val customMarkerContent = buildCustomMarkerContent(notifierRoute)
+    val markers = userRoute?.toKmpMarkers()
+    val customMarkerContent = buildCustomMarkerContent(userRoute)
 
     // Polyline de la ruta
     val polylines = if (routePolyline.size >= 2) {
         listOf(
             Polyline(
-                coordinates = routePolyline.map {
-                    Coordinates(latitude = it.latitude, longitude = it.longitude)
-                },
+                coordinates = routePolyline,
                 width = 8f,
                 lineColor = Color(0xFF1A73E8),
             )
@@ -163,8 +181,8 @@ fun RouteMap(
                     -31.39676517404372,
                     -58.01713884030075,
                 ),
-                /*if (coordinates != null) Coordinates(coordinates.latitude, longitude = coordinates.longitude)
-                else Coordinates(latitude = -31.388881, longitude = -58.013577),*/
+            /*if (coordinates != null) Coordinates(coordinates.latitude, longitude = coordinates.longitude)
+            else Coordinates(latitude = -31.388881, longitude = -58.013577),*/
             zoom = 13.8f
         ),
         properties = MapProperties(
@@ -199,7 +217,7 @@ fun RouteMap(
         polylines = polylines,
         customMarkerContent = customMarkerContent,
         onMarkerClick = { marker ->
-            val stop = notifierRoute?.notifierStops?.firstOrNull { it.direction == marker.title }
+            val stop = userRoute?.userStops?.firstOrNull { it.direction == marker.title }
             //val stop = notifierRoute { it.label == marker.title }
             stop?.let { onMarkerClick(it) }
         },

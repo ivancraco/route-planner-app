@@ -1,6 +1,6 @@
 CREATE TABLE Stop (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    routeId INTEGER NOT NULL,
+    id TEXT NOT NULL PRIMARY KEY,
+    routeId TEXT NOT NULL,
     noticeId INTEGER NOT NULL,
     stopStateId INTEGER NOT NULL,
     recipient TEXT NOT NULL,
@@ -21,6 +21,7 @@ CREATE TABLE Stop (
 -- Queries
 insert:
 INSERT INTO Stop (
+    id,
     routeId,
     noticeId,
     stopStateId,
@@ -32,6 +33,7 @@ INSERT INTO Stop (
     orderNum,
     note
 ) VALUES (
+    :id,
     :routeId,
     :noticeId,
     :stateId,
@@ -63,6 +65,9 @@ UPDATE Stop SET
     stopStateId = :stateId,
     isSynced = 0
 WHERE id = :id AND isDeleted = 0;
+
+deleteById:
+DELETE FROM Stop WHERE id = :id;
 
 softDelete:
 UPDATE Stop SET
@@ -101,7 +106,7 @@ SELECT Stop.*,
 FROM Stop
 JOIN StopState ON Stop.stopStateId = StopState.id
 JOIN Notice ON Stop.noticeId = Notice.id
-WHERE Stop.routeId = :routeId;
+WHERE Stop.routeId = :routeId AND isDeleted = 0;
 
 -- Sync queries
 

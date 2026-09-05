@@ -17,11 +17,16 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,6 +35,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,17 +46,285 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.unit.dp
+import com.routeplanner.app.core.common.toArgentinaDateString
 import com.routeplanner.app.core.ui.RoutePlannerTheme
-import com.routeplanner.app.features.home.data.model.NotifierRouteEntity
 import com.routeplanner.app.features.home.domain.model.AddressSearchState
-import com.routeplanner.app.features.home.domain.model.NotifierRoute
-import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.location.LocationCoordinates
 import com.routeplanner.app.features.home.places.AddressSuggestion
 import com.routeplanner.app.features.home.places.SelectedAddress
-import com.routeplanner.app.features.home.presentation.navigation.AddressType
-import kotlin.time.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
+import kotlin.uuid.ExperimentalUuidApi
 
+@OptIn(ExperimentalUuidApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun CreateRouteScreen(
+    placesState: AddressSearchState,
+    formState: CreateRouteFormState,
+    onDismiss: () -> Unit,
+    onNameChange: (String) -> Unit,
+    onDateChange: (Instant) -> Unit,
+    onOriginSelected: (String, String?, Double, Double) -> Unit,
+    onCreateRoute: () -> Unit,
+    onValueChange: (String) -> Unit,
+    onClear: () -> Unit,
+    onSuggestionSelected: (AddressSuggestion, (SelectedAddress) -> Unit) -> Unit,
+) {
+    var showAddressSearch by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    val tz = TimeZone.of("America/Argentina/Buenos_Aires")
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = formState.selectedDate
+            .toLocalDateTime(tz)
+            .date
+            .atStartOfDayIn(tz)
+            .toEpochMilliseconds()
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(RoutePlannerTheme.colors.primary)
+            .statusBarsPadding()
+            .padding(
+                horizontal = RoutePlannerTheme.dimens.contentPaddingHorizontal,
+                vertical = RoutePlannerTheme.dimens.contentPaddingVertical
+            ),
+        verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceXl),
+    ) {
+        // Header
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = "Nueva ruta",
+                color = RoutePlannerTheme.colors.onPrimary,
+                style = RoutePlannerTheme.typography.titleLarge,
+                modifier = Modifier.align(Alignment.Center),
+            )
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .size(RoutePlannerTheme.dimens.iconSizeMd),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Cerrar",
+                    tint = RoutePlannerTheme.colors.onPrimary,
+                )
+            }
+        }
+
+        // Nombre
+        OutlinedTextField(
+            value = formState.name,
+            onValueChange = onNameChange,
+            placeholder = {
+                Text(
+                    text = "Nombre de la ruta",
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = RoutePlannerTheme.colors.primary.copy(alpha = 0.5f),
+                focusedContainerColor = RoutePlannerTheme.colors.primary.copy(alpha = 0.5f),
+                unfocusedBorderColor = RoutePlannerTheme.colors.secondary.copy(alpha = 0.6f),
+                focusedBorderColor = RoutePlannerTheme.colors.secondary,
+                cursorColor = RoutePlannerTheme.colors.onPrimary,
+                focusedTextColor = RoutePlannerTheme.colors.onPrimary,
+                unfocusedTextColor = RoutePlannerTheme.colors.onPrimary,
+            ),
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
+        )
+
+        // Origen
+        Column(
+            verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
+        ) {
+            Text(
+                text = "Origen",
+                style = RoutePlannerTheme.typography.bodyMedium,
+                color = RoutePlannerTheme.colors.onPrimary,
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = RoutePlannerTheme.dimens.spaceXxl)
+                    .clip(RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd))
+                    .background(RoutePlannerTheme.colors.primaryContainer)
+                    .padding(horizontal = RoutePlannerTheme.dimens.spaceSm)
+                    .clickable { showAddressSearch = true },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm),
+            ) {
+                if (formState.isResolvingOrigin) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = RoutePlannerTheme.colors.onPrimary
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = null,
+                        tint = RoutePlannerTheme.colors.onPrimary,
+                        modifier = Modifier.size(RoutePlannerTheme.dimens.iconSizeSm),
+                    )
+                }
+                val shortAddress = formState.originDir
+                    .split(",")
+                    .firstOrNull()
+                    ?.trim() ?: formState.originDir
+                Text(
+                    text = shortAddress.ifBlank { "Seleccionar origen" },
+                    style = RoutePlannerTheme.typography.bodyMedium,
+                    color = if (formState.originDir.isBlank())
+                        RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f)
+                    else
+                        RoutePlannerTheme.colors.onPrimary,
+                )
+            }
+        }
+
+        // Fecha
+        Column(
+            verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
+        ) {
+            Text(
+                text = "Fecha",
+                style = RoutePlannerTheme.typography.bodyMedium,
+                color = RoutePlannerTheme.colors.onPrimary,
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = RoutePlannerTheme.dimens.spaceXxl)
+                    .clip(RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd))
+                    .background(RoutePlannerTheme.colors.primaryContainer)
+                    .padding(horizontal = RoutePlannerTheme.dimens.spaceSm)
+                    .clickable { showDatePicker = true },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = null,
+                    tint = RoutePlannerTheme.colors.onPrimary,
+                    modifier = Modifier.size(RoutePlannerTheme.dimens.iconSizeSm),
+                )
+                Text(
+                    text = formState.selectedDate.toArgentinaDateString(),
+                    style = RoutePlannerTheme.typography.bodyMedium,
+                    color = RoutePlannerTheme.colors.onPrimary,
+                )
+            }
+        }
+
+        // Botón crear
+        Button(
+            onClick = {
+                onCreateRoute()
+                onDismiss()
+            },
+            enabled = formState.isValid && !formState.isResolvingOrigin,
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .height(RoutePlannerTheme.dimens.buttonHeight)
+                .align(Alignment.CenterHorizontally),
+            shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = RoutePlannerTheme.colors.secondary,
+            ),
+        ) {
+            Text(
+                text = "Crear ruta",
+                style = RoutePlannerTheme.typography.titleMedium,
+                color = RoutePlannerTheme.colors.onSecondary,
+            )
+        }
+    }
+
+    // Dialog búsqueda de origen
+    if (showAddressSearch) {
+        AddressSearchField(
+            state = placesState,
+            onAddressSelected = { suggestion, selected ->
+                onOriginSelected(
+                    suggestion.primaryText,
+                    suggestion.placeId,
+                    selected.latitude,
+                    selected.longitude
+                )
+                showAddressSearch = false
+            },
+            onValueChange = onValueChange,
+            clear = onClear,
+            onSuggestionSelected = onSuggestionSelected,
+            onDismiss = { showAddressSearch = false },
+            label = "Buscar origen"
+        )
+    }
+
+    // DatePicker dialog
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val millis = datePickerState.selectedDateMillis
+                    if (millis != null) {
+                        onDateChange(Instant.fromEpochMilliseconds(millis))
+                    }
+                    showDatePicker = false
+                }) {
+                    Text(
+                        text = "Confirmar",
+                        color = RoutePlannerTheme.colors.secondary
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text(
+                        text = "Cancelar",
+                        color = RoutePlannerTheme.colors.onPrimary
+                    )
+                }
+            }
+        ) {
+            DatePicker(
+                state = datePickerState,
+                colors = DatePickerDefaults.colors(
+                    containerColor = RoutePlannerTheme.colors.primaryContainer,
+                    titleContentColor = RoutePlannerTheme.colors.onPrimary,
+                    headlineContentColor = RoutePlannerTheme.colors.onPrimary,
+                    weekdayContentColor = RoutePlannerTheme.colors.onPrimary,
+                    selectedDayContainerColor = RoutePlannerTheme.colors.secondary,
+                    todayDateBorderColor = RoutePlannerTheme.colors.secondary,
+                    dayContentColor = RoutePlannerTheme.colors.onPrimary,
+                )
+            )
+        }
+    }
+}
+// Formatea Instant a string legible en español
+fun Instant.toLocalDateString(): String {
+    val millis = toEpochMilliseconds()
+    val days   = millis / 86_400_000L
+    // simple ISO — reemplazá con tu librería de fecha si ya la tenés
+    return Instant.fromEpochMilliseconds(millis)
+        .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+        .date
+        .toString()  // "2025-08-27"
+}
+
+/*@OptIn(ExperimentalUuidApi::class)
 @Composable
 fun CreateRouteScreen(
     placesState: AddressSearchState,
@@ -59,11 +334,12 @@ fun CreateRouteScreen(
     onRequestLocationPermission: () -> Unit,
     onPickAddress: (forOrigin: Boolean) -> Unit,
     onFindDirections: (String) -> Unit,
-    onCreateRoute: (NotifierRoute) -> Unit,
+    onCreateRoute: (UserRoute) -> Unit,
     onValueChange: (String) -> Unit,
     onClear: () -> Unit,
     onSuggestionSelected: (AddressSuggestion, (SelectedAddress) -> Unit) -> Unit,
-) {
+)
+{
     var addressType by remember { mutableStateOf("") }
     var showSelectionDialog by remember { mutableStateOf(false) }
     var showFindDirectionsDialog by remember { mutableStateOf(false) }
@@ -215,22 +491,19 @@ fun CreateRouteScreen(
                 val originCoordinates = state.origin.coordinates
                 val destinationCoordinates = state.destination.coordinates
                 if (state.isValid) {
-                    val notifierRoute = NotifierRoute(
-                        id = 0,
+                    val createUserRoute = UserRoute(
+                        id = generateId(),
                         name = state.name,
-                        state = RouteStateEnum.ACTIVE.name,
+                        state = RouteStateEnum.ACTIVE.description,
                         createdAt = Clock.System.now(),
                         originDir = state.origin.address,
-                        originPlaceId = null,
                         originLatitude = originCoordinates.latitude,
                         originLongitude = originCoordinates.longitude,
                         destinationDir = state.destination.address,
-                        destinationPlaceId = null,
                         destinationLatitude = destinationCoordinates.latitude,
                         destinationLongitude = destinationCoordinates.longitude,
-                        notifierStops = listOf()
                     )
-                    onCreateRoute(notifierRoute)
+                    onCreateRoute(createUserRoute)
                     onDismiss()
                 }
             },
@@ -307,7 +580,7 @@ fun CreateRouteScreen(
             )
         }
     }
-}
+}*/
 
 // ---------------------------------------------------------------------------
 // Decide la selección inicial de Origen al abrir el diálogo

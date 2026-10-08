@@ -3,11 +3,10 @@ package com.routeplanner.app.features.home.data.local.dao
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.routeplanner.app.core.common.data.database.DbHelper
-import com.routeplanner.app.core.utils.SyncEntity
 import com.routeplanner.app.core.utils.generateId
-import com.routeplanner.app.features.home.data.local.mapper.stopEntityMapper
 import com.routeplanner.app.features.home.data.local.mapper.toUserStop
 import com.routeplanner.app.features.home.domain.model.StopNoticeEnum
+import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.StopStateEnum
 import com.routeplanner.app.features.home.domain.model.UserStop
 import kotlinx.coroutines.Dispatchers
@@ -91,13 +90,15 @@ class StopDao(
         }
     }
 
-    suspend fun selectById(id: String): UserStop {
+    suspend fun selectById(
+        id: String
+    ): UserStop {
         return dbHelper.withDatabase { database ->
             val stop = database.stopQueries.selectById(id).executeAsOneOrNull()
                 ?: throw Exception("Stop not found")
-            val stateDesc = StopStateEnum.fromId(stop.stopStateId.toInt()).description
+            //val stateDesc = StopStateEnum.fromId(stop.stopStateId.toInt()).description
             val noticeDesc = StopNoticeEnum.fromId(stop.noticeId.toInt()).description
-            stop.stopEntityMapper(state = stateDesc, notice = noticeDesc)
+            stop.toUserStop(notice = noticeDesc)
         }
     }
 
@@ -113,9 +114,9 @@ class StopDao(
     suspend fun selectPendingSync(): List<UserStop> {
         return dbHelper.withDatabase { database ->
             database.stopQueries.selectPendingSync().executeAsList().map { stop ->
-                val stateDesc = StopStateEnum.fromId(stop.stopStateId.toInt()).description
+                //val stateDesc = StopStateEnum.fromId(stop.stopStateId.toInt()).description
                 val noticeDesc = StopNoticeEnum.fromId(stop.noticeId.toInt()).description
-                stop.stopEntityMapper(state = stateDesc, notice = noticeDesc)
+                stop.toUserStop(noticeDescription = noticeDesc)
             }
         }
     }
@@ -125,10 +126,9 @@ class StopDao(
             // selectById ya no filtra isDeleted, trae cualquier estado
             val stop = database.stopQueries.selectById(id).executeAsOneOrNull()
                 ?: throw Exception("Stop not found")
-            val stateDesc  = StopStateEnum.fromId(stop.stopStateId.toInt()).description
+            //val stateDesc = StopStateEnum.fromId(stop.stopStateId.toInt()).description
             val noticeDesc = StopNoticeEnum.fromId(stop.noticeId.toInt()).description
-            stop.stopEntityMapper(
-                state  = stateDesc,
+            stop.toUserStop(
                 notice = noticeDesc
             )
         }
@@ -137,9 +137,9 @@ class StopDao(
     suspend fun selectPendingDelete(): List<UserStop> {
         return dbHelper.withDatabase { database ->
             database.stopQueries.selectPendingDelete().executeAsList().map { stop ->
-                val stateDesc = StopStateEnum.fromId(stop.stopStateId.toInt()).description
+                //val stateDesc = StopStateEnum.fromId(stop.stopStateId.toInt()).description
                 val noticeDesc = StopNoticeEnum.fromId(stop.noticeId.toInt()).description
-                stop.stopEntityMapper(state = stateDesc, notice = noticeDesc)
+                stop.toUserStop(notice = noticeDesc)
             }
         }
     }
@@ -156,15 +156,14 @@ class StopDao(
         }
     }
 
-    suspend fun enqueueSyncOperation(entityId: String, operation: String) {
-        println("--id: $entityId")
+    suspend fun enqueueSyncOperation(entityId: String, operation: String, entity: String) {
         dbHelper.withDatabase { database ->
             database.syncQueueQueries.deleteByEntityAndId(
-                entity = SyncEntity.STOP,
+                entity = entity,
                 entity_id = entityId
             )
             database.syncQueueQueries.insert(
-                entity = SyncEntity.STOP,
+                entity = entity,
                 entity_id = entityId,
                 operation = operation,
                 created_at = Clock.System.now()
@@ -206,4 +205,50 @@ class StopDao(
             }
         }
     }
+
+    suspend fun updateStopOrderLocal(id: String, order: Int) {
+        dbHelper.withDatabase { database ->
+            database.stopQueries.updateOrderLocal(
+                id = id,
+                orderNum = order.toLong()
+            )
+        }
+    }
+
+    // Estados
+    suspend fun getAllStates(): List<StopState> {
+        return dbHelper.withDatabase { database ->
+            database.stopStateQueries.selectAll()
+                .executeAsList()
+                .map { StopState(it.id.toInt(), it.description) }
+        }
+    }
+
+    suspend fun upsertState(stopState: StopState) {
+        dbHelper.withDatabase { database ->
+            database.stopStateQueries.upsert(
+                id = stopState.id.toLong(),
+                description = stopState.description
+            )
+        }
+    }
+
+    suspend fun upsertAllStates(stopStates: List<StopState>) {
+        dbHelper.withDatabase { database ->
+            stopStates.forEach {
+                database.stopStateQueries.upsert(
+                    id = it.id.toLong(),
+                    description = it.description
+                )
+            }
+        }
+    }
+
+    fun observeAllStates(): Flow<List<StopState>> =
+        dbHelper.withDatabaseFlow { database ->
+            database.stopStateQueries.selectAll()
+                .asFlow()
+                .mapToList(Dispatchers.Default)
+                .map { list -> list.map { StopState(it.id.toInt(), it.description) } }
+        }
 }

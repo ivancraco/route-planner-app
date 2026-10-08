@@ -20,7 +20,7 @@ import io.ktor.http.HttpHeaders
 import kotlinx.serialization.json.Json
 import org.koin.core.qualifier.named
 
-const val BASE_URL = "http://192.168.0.12:8080/"
+const val BASE_URL = "http://192.168.0.13:8080/"
 val AuthenticatedClient = named("authenticatedClient")
 val ExternalClient = named("externalClient")
 fun networkModule() = module {

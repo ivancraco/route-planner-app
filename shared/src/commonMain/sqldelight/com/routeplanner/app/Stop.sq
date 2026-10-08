@@ -85,7 +85,11 @@ selectAll:
 SELECT * FROM Stop WHERE isDeleted = 0;
 
 selectById:
-SELECT * FROM Stop WHERE id = :id;
+SELECT Stop.*,
+       StopState.description AS stateDescription
+FROM Stop
+JOIN StopState ON Stop.stopStateId = StopState.id
+WHERE Stop.id = :id;
 
 selectByRouteId:
 SELECT * FROM Stop
@@ -111,10 +115,18 @@ WHERE Stop.routeId = :routeId AND isDeleted = 0;
 -- Sync queries
 
 selectPendingSync:
-SELECT * FROM Stop WHERE isSynced = 0 AND isDeleted = 0;
+SELECT Stop.*,
+       StopState.description AS stateDescription
+FROM Stop
+JOIN StopState ON Stop.stopStateId = StopState.id
+WHERE Stop.isSynced = 0 AND Stop.isDeleted = 0;
 
 selectPendingDelete:
-SELECT * FROM Stop WHERE isDeleted = 1;
+SELECT Stop.*,
+       StopState.description AS stateDescription
+FROM Stop
+JOIN StopState ON Stop.stopStateId = StopState.id
+WHERE Stop.isDeleted = 1;
 
 markAsSynced:
 UPDATE Stop SET isSynced = 1 WHERE id = :id;
@@ -149,6 +161,11 @@ INSERT INTO Stop (
     1,
     0
 );
+
+updateOrderLocal:
+UPDATE Stop SET
+    orderNum = :orderNum
+WHERE id = :id;
 
 updateFromApi:
 UPDATE Stop SET

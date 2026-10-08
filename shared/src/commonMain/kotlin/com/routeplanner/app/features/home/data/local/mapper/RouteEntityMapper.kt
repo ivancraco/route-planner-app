@@ -42,6 +42,7 @@ fun SelectRouteWithState.toUserRoute(
         destinationPlaceId = destinationPlaceId,
         destinationLatitude = destinationLatitude,
         destinationLongitude = destinationLongitude,
+        encodedPolyline = encodedPolyline,
         userStops = userStops
     )
 

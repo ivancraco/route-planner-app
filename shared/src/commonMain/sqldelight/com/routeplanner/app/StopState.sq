@@ -9,3 +9,13 @@ INSERT INTO StopState (id, description) VALUES (3, 'FALLIDA');
 
 selectAll:
 SELECT * FROM StopState;
+
+upsert:
+INSERT OR REPLACE INTO StopState (id, description)
+VALUES (:id, :description);
+
+deleteById:
+DELETE FROM StopState WHERE id = :id;
+
+deleteAll:
+DELETE FROM StopState;

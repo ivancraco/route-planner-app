@@ -32,6 +32,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -166,23 +167,32 @@ private fun AuthTextField(
     TextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text(placeholder, color = Color.Gray) },
+        placeholder = { Text(
+            text = placeholder,
+            color = Color.Gray
+        ) },
         singleLine = true,
+        textStyle = TextStyle(
+            color = RoutePlannerTheme.colors.onPrimary,
+            fontSize = RoutePlannerTheme.typography.bodyMedium.fontSize,
+            fontWeight = RoutePlannerTheme.typography.bodyMedium.fontWeight
+        ),
         visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
         keyboardOptions = KeyboardOptions(
             keyboardType = if (isPassword) KeyboardType.Password else KeyboardType.Text
         ),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd),
         colors = TextFieldDefaults.colors(
             focusedTextColor = RoutePlannerTheme.colors.onPrimary,
             unfocusedTextColor = RoutePlannerTheme.colors.onPrimary,
             disabledTextColor = RoutePlannerTheme.colors.onPrimary,
-            focusedContainerColor = FieldGray,
-            unfocusedContainerColor = FieldGray,
-            disabledContainerColor = FieldGray,
+            focusedContainerColor = RoutePlannerTheme.colors.primaryContainer,
+            unfocusedContainerColor = RoutePlannerTheme.colors.primaryContainer,
+            disabledContainerColor = RoutePlannerTheme.colors.primaryContainer,
             focusedIndicatorColor = Color.Transparent,
             unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent
+            disabledIndicatorColor = Color.Transparent,
+            cursorColor = RoutePlannerTheme.colors.onPrimary
         ),
         modifier = Modifier.fillMaxWidth()
     )

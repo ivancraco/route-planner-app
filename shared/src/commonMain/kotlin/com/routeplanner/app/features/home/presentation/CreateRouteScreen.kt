@@ -71,6 +71,7 @@ fun CreateRouteScreen(
     onCreateRoute: () -> Unit,
     onValueChange: (String) -> Unit,
     onClear: () -> Unit,
+    onClearPlacesState: () -> Unit,
     onSuggestionSelected: (AddressSuggestion, (SelectedAddress) -> Unit) -> Unit,
 ) {
     var showAddressSearch by remember { mutableStateOf(false) }
@@ -266,7 +267,10 @@ fun CreateRouteScreen(
             onValueChange = onValueChange,
             clear = onClear,
             onSuggestionSelected = onSuggestionSelected,
-            onDismiss = { showAddressSearch = false },
+            onDismiss = {
+                onClearPlacesState()
+                showAddressSearch = false
+            },
             label = "Buscar origen"
         )
     }
@@ -313,10 +317,11 @@ fun CreateRouteScreen(
         }
     }
 }
+
 // Formatea Instant a string legible en español
 fun Instant.toLocalDateString(): String {
     val millis = toEpochMilliseconds()
-    val days   = millis / 86_400_000L
+    val days = millis / 86_400_000L
     // simple ISO — reemplazá con tu librería de fecha si ya la tenés
     return Instant.fromEpochMilliseconds(millis)
         .toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())

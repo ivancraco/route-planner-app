@@ -1,8 +1,10 @@
 package com.routeplanner.app.features.home.data.remote.mapper
 
 import com.routeplanner.app.features.home.data.remote.dto.CreateStopDto
+import com.routeplanner.app.features.home.data.remote.dto.StopStateDto
 import com.routeplanner.app.features.home.domain.model.UserStop
 import com.routeplanner.app.features.home.domain.model.StopNoticeEnum
+import com.routeplanner.app.features.home.domain.model.StopState
 
 fun CreateStopDto.toDomain(routeId: String): UserStop {
     return UserStop(
@@ -19,3 +21,5 @@ fun CreateStopDto.toDomain(routeId: String): UserStop {
         note = note
     )
 }
+
+fun StopStateDto.toDomain() = StopState(id = id, description = description)

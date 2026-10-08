@@ -9,6 +9,7 @@ object SyncOperation {
     const val INSERT = "INSERT"
     const val UPDATE = "UPDATE"
     const val DELETE = "DELETE"
+    const val REORDER = "REORDER"
 }
 
 object SyncConfig {

@@ -9,6 +9,7 @@ import com.routeplanner.app.features.home.domain.model.AddressSearchState
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
 import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.domain.model.StopNoticeEnum
+import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.StopStateEnum
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.UserStop
@@ -32,8 +33,10 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
@@ -138,6 +141,33 @@ class NotifierViewModel(
             .launchIn(viewModelScope)
     }
 
+    // estados disponibles para el dropdown
+    val stopStates: StateFlow<List<StopState>> = stopRepository
+        .observeAllStates()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )
+
+    fun onMarkStopState(stop: UserStop, newState: StopState) {
+        viewModelScope.launch {
+            stopRepository.updateState(stop.id, newState.id.toLong())
+            _stopDetailState.update {
+                it.copy(stop = stop.copy(state = newState.description))
+            }
+        }
+    }
+
+    fun onFinalizeRoute() {
+        viewModelScope.launch {
+            userRoute.value?.id?.let { routeId ->
+                routeRepository.updateState(routeId, RouteStateEnum.FINISHED.id)
+                clearRoute()
+            }
+        }
+    }
+
     fun onLocationCaptured(latitude: Double, longitude: Double) {
         _currentLocation.update {
             LocationBias(
@@ -210,6 +240,21 @@ class NotifierViewModel(
         private set
     var routes: MutableStateFlow<List<UserRoute>> = MutableStateFlow(emptyList())
         private set
+
+    /*val routePolyline: StateFlow<List<Coordinates>> = userRoute
+        .map { route ->
+            route?.encodedPolyline
+                ?.takeIf { it.isNotBlank() }
+                ?.let { PolylineDecoder.decode(it) }
+                ?: emptyList()
+        }
+        .flowOn(Dispatchers.Default)
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )*/
+    //eliminar onEach de userRoute y el asignado manual de _updatePolyline en optimizeRoute
 
     fun selectRoute(id: String) {
         _selectedRouteId.value = id
@@ -322,15 +367,20 @@ class NotifierViewModel(
                 stops = stops
             ).fold(
                 onSuccess = { result ->
+                    println("-----optimize success------")
                     // reordenar paradas según el índice óptimo
                     val reordered =
                         result.orderedStopIndices.mapIndexed { newOrder, originalIndex ->
                             stops[originalIndex].copy(order = newOrder + 1)
                         }
-                    // actualizar order de cada parada local + API
-                    reordered.forEach { stop ->
-                        stopRepository.updateStop(stop)
-                    }
+
+                    println("-----reordered: $reordered------")
+
+                    stopRepository.reorderStopsLocally(
+                        route.id,
+                        reordered
+                    )
+
                     // guardar polyline localmente
                     routeRepository.updatePolyline(route.id, result.encodedPolyline)
                     // decodificar y mostrar polyline
@@ -558,5 +608,9 @@ class NotifierViewModel(
                 )
             }
         }
+    }
+
+    fun onClearPlacesState() {
+        placesState.update { AddressSearchState() }
     }
 }

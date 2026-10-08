@@ -3,9 +3,7 @@ package com.routeplanner.app.core.utils
 import com.routeplanner.app.SyncQueue
 import com.routeplanner.app.core.common.connectivity.ConnectivityObserver
 import com.routeplanner.app.core.common.data.database.DbHelper
-import com.routeplanner.app.features.home.domain.model.CreateRoute
-import com.routeplanner.app.features.home.domain.model.RouteStateEnum
-import com.routeplanner.app.features.home.domain.model.UpdateRoute
+import com.routeplanner.app.features.home.data.remote.dto.StopOrderDto
 import com.routeplanner.app.features.home.domain.repository.RouteRepository
 import com.routeplanner.app.features.home.domain.repository.StopRepository
 import kotlinx.coroutines.CoroutineScope
@@ -24,11 +22,18 @@ class SyncManager(
     private val scope: CoroutineScope
 ) {
     private var syncJob: Job? = null
-
+    private var isFirstSync = true  // ← flag para el pull inicial
     fun start() {
         scope.launch {
             connectivityObserver.isConnected.collectLatest { connected ->
-                if (connected) startSyncLoop() else stopSyncLoop()
+                if (connected) {
+                    // pull de estados solo la primera vez que hay conexión
+                    if (isFirstSync) {
+                        isFirstSync = false
+                        stopRepository.syncStateFromApi()
+                    }
+                    startSyncLoop()
+                } else stopSyncLoop()
             }
         }
     }
@@ -119,15 +124,29 @@ class SyncManager(
                 routeRepository.insertRouteToApi(route)
                 routeRepository.markAsSynced(item.entity_id)
             }
+
             SyncOperation.UPDATE -> {
                 val route = routeRepository.selectById(item.entity_id)
                     ?: return
                 routeRepository.updateRouteToApi(route)
                 routeRepository.markAsSynced(item.entity_id)
             }
+
+            SyncOperation.REORDER -> {
+                // trae todas las paradas ya reordenadas localmente
+                val stops = stopRepository.selectByRouteId(item.entity_id)
+                // una sola llamada batch a la API
+                stopRepository.reorderInApi(
+                    routeId = item.entity_id,
+                    stops = stops.map { StopOrderDto(it.id, it.order) }
+                )
+                // no necesita markAsSynced porque updateOrderLocal no tocó isSynced
+            }
+
             SyncOperation.DELETE -> {
                 routeRepository.deleteRouteToApi(item.entity_id)
-                routeRepository.deletePermanently(item.entity_id)            }
+                routeRepository.deletePermanently(item.entity_id)
+            }
         }
     }
 
@@ -140,6 +159,7 @@ class SyncManager(
                 stopRepository.pushToApi(stop, stop.routeId, item.operation)
                 stopRepository.markAsSynced(item.entity_id)
             }
+
             SyncOperation.DELETE -> {
                 // selectById sin filtrar isDeleted, para poder leer el routeId
                 val stop = stopRepository.selectByIdIncludingDeleted(item.entity_id)

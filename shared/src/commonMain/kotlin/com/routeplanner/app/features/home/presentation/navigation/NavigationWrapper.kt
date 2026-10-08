@@ -39,6 +39,7 @@ data class NewRoute(
 
 @Serializable
 data class FindDirections(val addressType: String)
+
 @Composable
 fun NavigationWrapper(
     viewModel: NotifierViewModel = koinViewModel()
@@ -86,7 +87,7 @@ fun NavigationWrapper(
                 onFindDirections = { addressType ->
                     navController.navigate(FindDirections(addressType))
                 },*/
-                onCreateRoute = {  ->
+                onCreateRoute = { ->
                     viewModel.createRoute()
                 },
                 onSuggestionSelected = { suggestion, onResolved ->
@@ -104,6 +105,9 @@ fun NavigationWrapper(
                 },
                 onDateChange = { date ->
                     viewModel.onCreateRouteDateChange(date)
+                },
+                onClearPlacesState = {
+                    viewModel.onClearPlacesState()
                 },
                 onOriginSelected = { address, placeId, latitude, longitude ->
                     viewModel.onCreateRouteOriginSelected(address, placeId, latitude, longitude)
@@ -158,10 +162,12 @@ fun NavigationWrapper(
         }
 
         composable<HomeNotifierRoute> {
+            val stopStates by viewModel.stopStates.collectAsStateWithLifecycle()
             RoutePlannerScreen(
                 userRoute = routeState.value,
                 allRoutes = allRoutes.value,
                 routePolyline = routePolyline,
+                stopStates = stopStates,
                 onCreateRoute = { latitude, longitude ->
                     navController.navigate(NewRoute(latitude, longitude))
                 },
@@ -197,7 +203,7 @@ fun NavigationWrapper(
                     viewModel.clear()
                 },
                 onDismissStopSearch = {
-                   viewModel.onDismissStopDetail()
+                    viewModel.onDismissStopDetail()
                 },
                 onStopRecipientChange = { value ->
                     viewModel.onStopRecipientChange(value)
@@ -240,6 +246,11 @@ fun NavigationWrapper(
                 },
                 onLocationCaptured = { latitude, longitude ->
                     viewModel.onLocationCaptured(latitude, longitude)
+                },
+                onFinalizeRoute = { viewModel.onFinalizeRoute() },
+                onMarkStopState = { stop, state -> viewModel.onMarkStopState(stop, state) },
+                onClearPlacesState = {
+                    viewModel.onClearPlacesState()
                 }
             )
         }

@@ -13,9 +13,9 @@ val iosModules = module {
 
 fun initKoinIOS() {
     initKoin(additionalModules = listOf(iosModules, settingsModule))
-    KoinPlatform.getKoin().get<SyncManager>().start()
+    //KoinPlatform.getKoin().get<SyncManager>().start()
 }
 
 fun onAppForeground() {
-    KoinPlatform.getKoin().get<SyncManager>().syncNowAsync()
+    //KoinPlatform.getKoin().get<SyncManager>().syncNowAsync()
 }

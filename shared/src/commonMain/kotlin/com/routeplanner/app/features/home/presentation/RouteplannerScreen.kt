@@ -39,10 +39,14 @@ import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -57,6 +61,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,6 +85,7 @@ import androidx.compose.ui.window.Dialog
 import com.routeplanner.app.core.common.toArgentinaDateString
 import com.routeplanner.app.core.ui.RoutePlannerTheme
 import com.routeplanner.app.features.home.domain.model.AddressSearchState
+import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
 import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.domain.model.StopNoticeEnum
@@ -109,6 +115,7 @@ private const val SHEET_EXPANDED_FRACTION = 0.85f
 // Pantalla principal
 // ---------------------------------------------------------------------------
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RoutePlannerScreen(
     routeName: String = "Ruta 001",
@@ -117,6 +124,7 @@ fun RoutePlannerScreen(
     routePolyline: List<Coordinates> = emptyList(),
     isMyLocationEnabled: Boolean = false,
     stopStates: List<StopState>,
+    notices: List<Notices>,
     onMenuClick: () -> Unit = {},
     onSearchStop: () -> Unit = {},
     onCreateRoute: (Double?, Double?) -> Unit,
@@ -133,7 +141,7 @@ fun RoutePlannerScreen(
     onClearQuery: () -> Unit,
     onDismissStopSearch: () -> Unit,
     onStopRecipientChange: (String) -> Unit,
-    onStopNoticeChange: (StopNoticeEnum) -> Unit,
+    onStopNoticeChange: (Notices) -> Unit,
     onStopNoteChange: (String) -> Unit,
     onDismissStopForm: () -> Unit,
     onCreateStop: () -> Unit,
@@ -191,7 +199,7 @@ fun RoutePlannerScreen(
         derivedStateOf { containerHeightPx * SHEET_EXPANDED_FRACTION }
     }
 
-    var sheetHeightPx by remember { mutableFloatStateOf(0f) }
+    var sheetHeightPx by rememberSaveable { mutableFloatStateOf(0f) }
 
     // Snap points disponibles según si hay ruta o no
     val availableSnaps by remember(userRoute, emptyPx, partialPx, expandedPx) {
@@ -205,9 +213,16 @@ fun RoutePlannerScreen(
         sheetHeightPx = if (userRoute == null) {
             if (emptyPx > 0f) emptyPx else sheetHeightPx
         } else {
-            if (partialPx > 0f) partialPx else sheetHeightPx
+            sheetHeightPx
         }
     }
+    /*LaunchedEffect(userRoute, emptyPx, partialPx) {
+        sheetHeightPx = if (userRoute == null) {
+            if (emptyPx > 0f) emptyPx else sheetHeightPx
+        } else {
+            if (partialPx > 0f) partialPx else sheetHeightPx
+        }
+    }*/
 
     suspend fun snapTo(target: Float) = animate(
         initialValue = sheetHeightPx,
@@ -265,46 +280,49 @@ fun RoutePlannerScreen(
                             verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceMd)
                         ) {
                             items(allRoutes) { route ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(RoutePlannerTheme.dimens.spaceMd)
-                                        .clickable {
-                                            scope.launch {
-                                                panelState.close()
-                                            }
-                                            onChangeRoute(route.id)
-                                        },
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
+                                ListItem(
+                                    colors = ListItemDefaults.colors(
+                                        containerColor = RoutePlannerTheme.colors.primary
+                                    ),
+                                    onClick = {
+                                        scope.launch {
+                                            onDismissStopDetail()
+                                            panelState.close()
+                                        }
+                                        onChangeRoute(route.id)
+                                    }
                                 ) {
-                                    Text(
-                                        text = route.name,
-                                        color = RoutePlannerTheme.colors.onPrimary
-                                    )
-                                    Text(
-                                        text = route.createdAt.toArgentinaDateString(),
-                                        style = RoutePlannerTheme.typography.labelSmall,
-                                        color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f)
-                                    )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = RoutePlannerTheme.dimens.spaceMd),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = route.name,
+                                            color = RoutePlannerTheme.colors.onPrimary
+                                        )
+                                        Text(
+                                            text = route.createdAt.toArgentinaDateString(),
+                                            style = RoutePlannerTheme.typography.labelSmall,
+                                            color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f)
+                                        )
+                                    }
                                 }
                             }
                         }
-                        IconButton(
+                        FloatingActionButton(
                             onClick = {
                                 onCreateRoute(
                                     coordinates?.latitude,
                                     coordinates?.longitude,
                                 )
-                            },
-                            colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = RoutePlannerTheme.colors.secondary,
-                            )
+                            }
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                tint = RoutePlannerTheme.colors.onPrimary
+                                Icons.Default.Add,
+                                "Crear nueva ruta"
                             )
                         }
                     }
@@ -334,7 +352,9 @@ fun RoutePlannerScreen(
             color = MaterialTheme.colorScheme.surface,
         ) {
             IconButton(onClick = {
-                scope.launch { panelState.toggle() }
+                scope.launch {
+                    panelState.toggle()
+                }
             }) {
                 Icon(
                     imageVector = Icons.Default.Menu,
@@ -362,7 +382,7 @@ fun RoutePlannerScreen(
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
 
-                        // Handle de arrastre — mismo patrón que ya tenías
+                        // Handle de arrastre
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -391,34 +411,36 @@ fun RoutePlannerScreen(
                             )
                         }
 
-
-                        RouteSheetContent(
-                            userRoute = userRoute,
-                            onSearchStop = onSearchStopClick,
-                            stopStates = stopStates,
-                            isOptimizing = createRouteFormState.isOptimizing,
-                            onOptimizeRoute = onOptimizeRoute,
-                            onStopClick = onStopClick,
-                            onCreateRoute = {
-                                onCreateRoute(
-                                    coordinates?.latitude,
-                                    coordinates?.longitude,
-                                )
-                            },
-                            onOptionsDialog = { showOptionsDialog = true },
-                            onDeleteStop = {
-                                showConfirmDeleteStop = true
-                                stopToDeleteId = it
-                            },
-                            onMarkExitosa = { onMarkExitosa(it) },
-                            onDismissStopDetail = { onDismissStopDetail() },
-                            onMarkFallida = { onMarkFallida(it) },
-                            onStopNoteInputChange = { onStopNoteInputChange(it) },
-                            onSaveStopNote = { onSaveStopNote() },
-                            stopDetailState = stopDetailState,
-                            onFinalizeRoute = onFinalizeRoute,
-                            onMarkStopState = onMarkStopState
-                        )
+                        RoutePlannerTheme {
+                            RouteSheetContent(
+                                userRoute = userRoute,
+                                onSearchStop = onSearchStopClick,
+                                stopStates = stopStates,
+                                notices = notices,
+                                isOptimizing = createRouteFormState.isOptimizing,
+                                onOptimizeRoute = onOptimizeRoute,
+                                onStopClick = onStopClick,
+                                onCreateRoute = {
+                                    onCreateRoute(
+                                        coordinates?.latitude,
+                                        coordinates?.longitude,
+                                    )
+                                },
+                                onOptionsDialog = { showOptionsDialog = true },
+                                onDeleteStop = {
+                                    showConfirmDeleteStop = true
+                                    stopToDeleteId = it
+                                },
+                                onMarkExitosa = { onMarkExitosa(it) },
+                                onDismissStopDetail = { onDismissStopDetail() },
+                                onMarkFallida = { onMarkFallida(it) },
+                                onStopNoteInputChange = { onStopNoteInputChange(it) },
+                                onSaveStopNote = { onSaveStopNote() },
+                                stopDetailState = stopDetailState,
+                                onFinalizeRoute = onFinalizeRoute,
+                                onMarkStopState = onMarkStopState
+                            )
+                        }
                     }
                 }
             }
@@ -456,8 +478,8 @@ fun RoutePlannerScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(14.dp),
+                        .height(44.dp),
+                    shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusLg),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary,
                         contentColor = MaterialTheme.colorScheme.onSecondary,
@@ -522,7 +544,6 @@ fun RoutePlannerScreen(
 
         // Dialog búsqueda de dirección para parada
         if (stopFormState.isSearchingDirection) {
-            println("buscando dirección")
             AddressSearchField(
                 state = placesState,
                 onAddressSelected = { suggestion, address ->
@@ -540,7 +561,7 @@ fun RoutePlannerScreen(
                     onClearPlacesState()
                     onDismissStopSearch()
                 },
-                label = "Buscar punto de entrega"
+                //label = "Buscar punto de entrega"
             )
         }
 
@@ -548,6 +569,7 @@ fun RoutePlannerScreen(
         if (stopFormState.isFillingForm) {
             StopFormDialog(
                 state = stopFormState,
+                notices = notices,
                 onRecipientChange = onStopRecipientChange,
                 onNoticeChange = onStopNoticeChange,
                 onNoteChange = onStopNoteChange,
@@ -568,6 +590,7 @@ private fun RouteSheetContent(
     stopDetailState: StopDetailState,
     isOptimizing: Boolean,
     stopStates: List<StopState>,
+    notices: List<Notices>,
     onOptimizeRoute: () -> Unit,
     onDismissStopDetail: () -> Unit,
     onStopNoteInputChange: (String) -> Unit,
@@ -588,6 +611,7 @@ private fun RouteSheetContent(
         StopDetailPanel(
             state = stopDetailState,
             stopStates = stopStates,
+            notices = notices,
             onStateChange = {
                 onMarkStopState(stopDetailState.stop, it)
             },
@@ -648,7 +672,6 @@ private fun RouteSheetContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        println("------pepe----------")
                         onSearchStop()
                     },
                 shape = RoundedCornerShape(12.dp),
@@ -688,19 +711,22 @@ private fun RouteSheetContent(
                         stop = UserStop(
                             id = "origin", routeId = userRoute.id,
                             direction = userRoute.originDir,
-                            recipient = "", notice = "", state = "",
+                            recipient = "",
+                            noticeId = 0,
+                            stateId = 0,
                             latitude = userRoute.originLatitude,
                             longitude = userRoute.originLongitude,
                             order = 0, note = null,
                             directionPlaceId = userRoute.originPlaceId
                         ),
+                        state = stopStates,
                         isOriginOrDestination = true,
                         markerColor = Color.Blue,
                         onClick = {},
                         labelContent = {
                             Box(
                                 modifier = Modifier
-                                    .size(10.dp)
+                                    .size(20.dp)
                                     .clip(CircleShape)
                                     .background(Color.Blue),
                             )
@@ -710,23 +736,32 @@ private fun RouteSheetContent(
                 items(userRoute.userStops.sortedBy { it.order }, key = { it.id }) { stop ->
                     StopRow(
                         stop = stop,
+                        state = stopStates,
                         markerColor = MarkerColors.waypoint,
                         onClick = { onStopClick(stop) },
                         labelContent = {
-                            Text(
-                                text = "${stop.order} - ",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.Blue),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "${stop.order}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White,
+                                )
+                            }
                         }
                     )
-                    if (stop.id != userRoute.userStops.lastOrNull()?.id) {
+                    /*if (stop.id != userRoute.userStops.lastOrNull()?.id) {
                         HorizontalDivider(
                             modifier = Modifier.padding(start = 22.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                             thickness = 0.5.dp,
                         )
-                    }
+                    }*/
                 }
                 /*item {
                     StopRow(
@@ -753,7 +788,7 @@ private fun RouteSheetContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(44.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusLg),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = RoutePlannerTheme.colors.secondary.copy(alpha = 0.15f),
                         contentColor = RoutePlannerTheme.colors.secondary
@@ -780,22 +815,32 @@ private fun RouteSheetContent(
 
         Spacer(Modifier.height(12.dp))
 
-
-        Button(
-            onClick = if (userRoute != null) onFinalizeRoute else onCreateRoute,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary,
-            ),
-        ) {
-            Text(
-                text = if (userRoute != null && RouteStateEnum.fromName(userRoute.state).id == 1) "Finalizar ruta" else "Crear nueva ruta",
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-            )
+        if (userRoute != null && RouteStateEnum.fromName(userRoute.state).id == 1) {
+            Button(
+                onClick = onFinalizeRoute,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp),
+                shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusLg),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary,
+                ),
+            ) {
+                Text(
+                    text = "Finalizar ruta",
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                )
+            }
+        } else {
+            FloatingActionButton(
+                onClick = onCreateRoute
+            ) {
+                Icon(
+                    Icons.Default.Add,
+                    "Crear nueva ruta"
+                )
+            }
         }
 
         Spacer(Modifier.height(12.dp))
@@ -985,6 +1030,7 @@ private fun StopRow(
 @Composable
 private fun StopRow(
     stop: UserStop,
+    state: List<StopState>,
     markerColor: Color = MarkerColors.waypoint,
     isOriginOrDestination: Boolean = false,
     labelContent: @Composable () -> Unit = {},
@@ -1032,11 +1078,11 @@ private fun StopRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (stop.state.isNotBlank()) {
+                if (stop.stateId != 0) {
                     Text(
-                        text = stop.state,
+                        text = state.find { it.id == stop.stateId }?.description ?: "",
                         style = RoutePlannerTheme.typography.labelSmall,
-                        color = if (stop.state == "PENDIENTE")
+                        color = if (stop.stateId == 10)
                             RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.4f)
                         else
                             RoutePlannerTheme.colors.secondary.copy(alpha = 0.8f),

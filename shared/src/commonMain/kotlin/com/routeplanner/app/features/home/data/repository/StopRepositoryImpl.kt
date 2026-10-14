@@ -6,6 +6,7 @@ import com.routeplanner.app.core.utils.SyncOperation
 import com.routeplanner.app.features.home.data.local.datasource.StopLocalDataSource
 import com.routeplanner.app.features.home.data.remote.datasource.StopRemoteDataSource
 import com.routeplanner.app.features.home.data.remote.dto.StopOrderDto
+import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.UserStop
 import com.routeplanner.app.features.home.domain.repository.StopRepository
@@ -108,17 +109,28 @@ class StopRepositoryImpl(
         return localDataSource.observeAllStates()
     }
 
+    override fun observeAllNotices(): Flow<List<Notices>> {
+        return localDataSource.observeAllNotices()
+    }
+
     override suspend fun getAllStates(): List<StopState> {
         return localDataSource.getAllStates()
     }
 
     override suspend fun syncStateFromApi(): Result<Unit> = runCatching {
         val response = remoteDataSource.getStates()
-        println("response: $response")
         if (response.isSuccess) {
             val states = response.getOrNull() ?: emptyList()
             println("states: $states")
             localDataSource.upsertAllStates(states)
+        }
+    }
+
+    override suspend fun syncNoticesFromApi(): Result<Unit> = runCatching {
+        val response = remoteDataSource.getNotices()
+        if (response.isSuccess) {
+            val notices = response.getOrNull() ?: emptyList()
+            localDataSource.upsertAllNotices(notices)
         }
     }
 }

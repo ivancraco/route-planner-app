@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,13 +28,17 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,58 +57,7 @@ import com.routeplanner.app.features.home.domain.model.AddressSearchState
 import com.routeplanner.app.features.home.places.AddressSuggestion
 import com.routeplanner.app.features.home.places.SelectedAddress
 
-/*@Composable
-fun AddressSearchField(
-    state: AddressSearchState,
-    onAddressSelected: (SelectedAddress) -> Unit,
-    onValueChange: (String) -> Unit,
-    clear: () -> Unit,
-    onSuggestionSelected: (AddressSuggestion, (SelectedAddress) -> Unit) -> Unit,
-    label: String = "Buscar dirección",
-) {
-    Column(modifier =
-        Modifier
-            .fillMaxSize()
-            .safeContentPadding()
-            .padding(
-                horizontal = RoutePlannerTheme.dimens.contentPaddingHorizontal,
-                vertical = RoutePlannerTheme.dimens.contentPaddingVertical
-            )
-    ) {
-        OutlinedTextField(
-            value = state.query,
-            onValueChange = { onValueChange(it) },
-            label = { Text(label) },
-            singleLine = true,
-            trailingIcon = {
-                when {
-                    state.isLoading -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                    state.query.isNotEmpty() -> IconButton(onClick = clear) {
-                        Icon(Icons.Default.Close, contentDescription = "Limpiar")
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        AnimatedVisibility(visible = state.suggestions.isNotEmpty()) {
-            LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp)) {
-                items(state.suggestions, key = { it.placeId }) { suggestion ->
-                    SuggestionRow(
-                        suggestion = suggestion,
-                        onClick = { onSuggestionSelected(suggestion, onAddressSelected) }
-                    )
-                    HorizontalDivider()
-                }
-            }
-        }
-
-        state.error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}*/
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddressSearchField(
     state: AddressSearchState,
@@ -114,21 +69,24 @@ fun AddressSearchField(
     label: String = "Buscar dirección",
 ) {
     var selectedAddress by remember { mutableStateOf<AddressSuggestion?>(null) }
-    Dialog(
+    ModalBottomSheet(
+        modifier = Modifier.fillMaxSize(),
         onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false
-        )
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        dragHandle = null,
+        sheetGesturesEnabled = false,
+        containerColor = RoutePlannerTheme.colors.primary
     ) {
-        Column(modifier =
-            Modifier
-                .fillMaxSize()
-                .background(RoutePlannerTheme.colors.primary)
-                .safeContentPadding()
-                .padding(
-                    horizontal = RoutePlannerTheme.dimens.contentPaddingHorizontal,
-                    vertical = RoutePlannerTheme.dimens.contentPaddingVertical
-                ),
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(
+                        horizontal = RoutePlannerTheme.dimens.contentPaddingHorizontal,
+                        vertical = RoutePlannerTheme.dimens.contentPaddingVertical
+                    ),
             verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceXl)
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
@@ -164,7 +122,11 @@ fun AddressSearchField(
                 singleLine = true,
                 trailingIcon = {
                     when {
-                        state.isLoading -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                        state.isLoading -> CircularProgressIndicator(
+                            Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+
                         state.query.isNotEmpty() -> IconButton(onClick = clear) {
                             Icon(Icons.Default.Close, contentDescription = "Limpiar")
                         }
@@ -208,7 +170,14 @@ fun AddressSearchField(
 
             Button(
                 onClick = {
-                    selectedAddress?.let { onSuggestionSelected(it) { address -> onAddressSelected(it, address) } }
+                    selectedAddress?.let {
+                        onSuggestionSelected(it) { address ->
+                            onAddressSelected(
+                                it,
+                                address
+                            )
+                        }
+                    }
                     onDismiss()
                 },
                 enabled = selectedAddress != null,
@@ -229,7 +198,11 @@ fun AddressSearchField(
             }
 
             state.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }
@@ -239,7 +212,8 @@ fun AddressSearchField(
 private fun SuggestionRow(
     suggestion: AddressSuggestion,
     isSelected: Boolean,
-    onClick: () -> Unit) {
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()

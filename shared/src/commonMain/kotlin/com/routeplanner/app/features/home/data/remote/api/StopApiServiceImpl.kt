@@ -1,7 +1,7 @@
 package com.routeplanner.app.features.home.data.remote.api
 
-import com.routeplanner.app.core.di.BASE_URL
 import com.routeplanner.app.features.home.data.remote.dto.CreateStopDto
+import com.routeplanner.app.features.home.data.remote.dto.NoticeDto
 import com.routeplanner.app.features.home.data.remote.dto.StopOrderDto
 import com.routeplanner.app.features.home.data.remote.dto.StopStateDto
 import com.routeplanner.app.features.home.data.remote.dto.UpdateStopDto
@@ -19,7 +19,11 @@ class StopApiServiceImpl(
     private val httpClient: HttpClient
 ): StopApiService {
     override suspend fun getStates(): List<StopStateDto> {
-        return httpClient.get("${BASE_URL}stop-states").body()
+        return httpClient.get("stop-states").body()
+    }
+
+    override suspend fun getNotices(): List<NoticeDto> {
+        return httpClient.get("notices").body()
     }
 
     override suspend fun createStop(
@@ -27,7 +31,7 @@ class StopApiServiceImpl(
         routeId: String
     ): Boolean {
         println("--id: ${createStopDto.id}")
-        return httpClient.post("${BASE_URL}routes/$routeId/stops") {
+        return httpClient.post("routes/$routeId/stops") {
             contentType(ContentType.Application.Json)
             setBody(createStopDto)
         }.body<Boolean>()
@@ -38,19 +42,19 @@ class StopApiServiceImpl(
         id: String,
         routeId: String
     ): Boolean {
-        return httpClient.put("${BASE_URL}routes/$routeId/stops/$id") {
+        return httpClient.put("routes/$routeId/stops/$id") {
             contentType(ContentType.Application.Json)
             setBody(updateStopDto)
         }.body<Boolean>()
     }
 
     override suspend fun deleteFromApi(id: String, routeId: String): Boolean {
-        return httpClient.delete("${BASE_URL}routes/$routeId/stops/$id")
+        return httpClient.delete("routes/$routeId/stops/$id")
             .body<Boolean> ()
     }
 
     override suspend fun pullFromApi(routeId: String): List<CreateStopDto> {
-        return httpClient.get("${BASE_URL}routes/$routeId/stops")
+        return httpClient.get("routes/$routeId/stops")
             .body<List<CreateStopDto>>()
     }
 
@@ -58,7 +62,7 @@ class StopApiServiceImpl(
         routeId: String,
         stops: List<StopOrderDto>
     ): Boolean {
-        return httpClient.put(urlString = "${BASE_URL}routes/$routeId/stops/reorder") {
+        return httpClient.put(urlString = "routes/$routeId/stops/reorder") {
             contentType(ContentType.Application.Json)
             setBody(stops)
         }.body<Boolean>()

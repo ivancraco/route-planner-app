@@ -11,3 +11,13 @@ INSERT INTO Notice (id, description) VALUES (5, 'PLIEGO');
 
 selectAll:
 SELECT * FROM Notice;
+
+upsert:
+INSERT OR REPLACE INTO Notice (id, description)
+VALUES (:id, :description);
+
+deleteById:
+DELETE FROM Notice WHERE id = :id;
+
+deleteAll:
+DELETE FROM Notice;

@@ -19,7 +19,7 @@ class RoutePlannerApp : Application() {
         super.onCreate()
         initKoinAndroid()
         // arranca el loop de sync
-        KoinPlatform.getKoin().get<SyncManager>().start()
+        //KoinPlatform.getKoin().get<SyncManager>().start()
     }
 
     private fun initKoinAndroid() {

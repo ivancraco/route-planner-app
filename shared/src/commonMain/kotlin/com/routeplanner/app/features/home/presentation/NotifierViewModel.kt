@@ -6,11 +6,11 @@ import com.routeplanner.app.core.utils.PolylineDecoder
 import com.routeplanner.app.core.utils.generateId
 import com.routeplanner.app.features.auth.data.local.SessionLocalDataSource
 import com.routeplanner.app.features.home.domain.model.AddressSearchState
+import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
 import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.domain.model.StopNoticeEnum
 import com.routeplanner.app.features.home.domain.model.StopState
-import com.routeplanner.app.features.home.domain.model.StopStateEnum
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.UserStop
 import com.routeplanner.app.features.home.domain.repository.AddressAutocompleteRepository
@@ -33,10 +33,8 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
@@ -150,11 +148,20 @@ class NotifierViewModel(
             emptyList()
         )
 
+    // Lista de intimaciones
+    val notices: StateFlow<List<Notices>> = stopRepository
+        .observeAllNotices()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )
+
     fun onMarkStopState(stop: UserStop, newState: StopState) {
         viewModelScope.launch {
-            stopRepository.updateState(stop.id, newState.id.toLong())
+            stopRepository.updateState(id = stop.id, stateId = newState.id.toLong())
             _stopDetailState.update {
-                it.copy(stop = stop.copy(state = newState.description))
+                it.copy(stop = stop.copy(stateId = newState.id))
             }
         }
     }
@@ -163,7 +170,7 @@ class NotifierViewModel(
         viewModelScope.launch {
             userRoute.value?.id?.let { routeId ->
                 routeRepository.updateState(routeId, RouteStateEnum.FINISHED.id)
-                clearRoute()
+                //clearRoute()
             }
         }
     }
@@ -263,7 +270,6 @@ class NotifierViewModel(
     fun clearRoute() {
         _selectedRouteId.value = null
     }
-
 
     fun onOpenCreateRoute(currentLatitude: Double?, currentLongitude: Double?) {
         _createRouteFormState.update { CreateRouteFormState() }
@@ -505,7 +511,7 @@ class NotifierViewModel(
     fun onStopRecipientChange(value: String) =
         _stopFormState.update { it.copy(recipient = value) }
 
-    fun onStopNoticeChange(value: StopNoticeEnum) =
+    fun onStopNoticeChange(value: Notices) =
         _stopFormState.update { it.copy(notice = value) }
 
     fun onStopNoteChange(value: String) =
@@ -524,8 +530,8 @@ class NotifierViewModel(
                 val newStop = UserStop(
                     id = generateId(),
                     routeId = routeId,
-                    notice = form.notice.description,
-                    state = StopStateEnum.PENDIENTE.description,
+                    noticeId = form.notice?.id ?: 0,
+                    stateId = 10,
                     recipient = form.recipient,
                     direction = form.direction,
                     directionPlaceId = form.directionPlaceId,
@@ -569,15 +575,15 @@ class NotifierViewModel(
         }
     }
 
-    fun onMarkStopState(stop: UserStop, newState: StopStateEnum) {
+    /*fun onMarkStopState(stop: UserStop, newState: StopStateEnum) {
         viewModelScope.launch {
             val stateId = newState.id.toLong()
             stopRepository.updateState(stop.id, stateId)
-            _stopDetailState.update { it.copy(stop = stop.copy(state = newState.description)) }
+            _stopDetailState.update { it.copy(stop = stop.copy(stateId = newState.id)) }
             // verifica si todas las paradas están completadas
             checkRouteCompletion(stop.id, newState.description)
         }
-    }
+    }*/
 
     fun onDeleteStop(stopId: String) {
         viewModelScope.launch {
@@ -586,19 +592,19 @@ class NotifierViewModel(
         }
     }
 
-    private fun checkRouteCompletion(id: String, description: String) {
+    /*private fun checkRouteCompletion(id: String, description: String) {
         val route = userRoute.value ?: return
 
         // aplica el cambio localmente sin esperar al Flow
         val updatedStops = route.userStops.map { stop ->
-            if (stop.id == id) stop.copy(state = description) else stop
+            if (stop.id == id) stop.copy(stateId = description) else stop
         }
 
         if (updatedStops.isEmpty()) return
 
         val allCompleted = updatedStops.all {
-            it.state == StopStateEnum.EXITOSA.description ||
-                    it.state == StopStateEnum.FALLIDA.description
+            it.stateId == StopStateEnum.EXITOSA.description ||
+                    it.stateId == StopStateEnum.FALLIDA.description
         }
         if (allCompleted) {
             viewModelScope.launch {
@@ -608,7 +614,7 @@ class NotifierViewModel(
                 )
             }
         }
-    }
+    }*/
 
     fun onClearPlacesState() {
         placesState.update { AddressSearchState() }

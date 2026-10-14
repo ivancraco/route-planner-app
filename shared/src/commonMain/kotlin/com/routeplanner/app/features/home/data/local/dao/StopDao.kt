@@ -5,9 +5,9 @@ import app.cash.sqldelight.coroutines.mapToList
 import com.routeplanner.app.core.common.data.database.DbHelper
 import com.routeplanner.app.core.utils.generateId
 import com.routeplanner.app.features.home.data.local.mapper.toUserStop
+import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.StopNoticeEnum
 import com.routeplanner.app.features.home.domain.model.StopState
-import com.routeplanner.app.features.home.domain.model.StopStateEnum
 import com.routeplanner.app.features.home.domain.model.UserStop
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -38,8 +38,8 @@ class StopDao(
             database.stopQueries.insert(
                 id = stop.id,
                 routeId = routeId,
-                noticeId = StopNoticeEnum.fromName(stop.notice).id.toLong(),
-                stateId = StopStateEnum.fromName(stop.state).id.toLong(),
+                noticeId = stop.noticeId.toLong(),
+                stateId = stop.stateId.toLong(),
                 recipient = stop.recipient,
                 direction = stop.direction,
                 directionPlaceId = stop.directionPlaceId,
@@ -56,8 +56,8 @@ class StopDao(
         dbHelper.withDatabase { database ->
             database.stopQueries.update(
                 id = stop.id,
-                noticeId = StopNoticeEnum.fromName(stop.notice).id.toLong(),
-                stateId = StopStateEnum.fromName(stop.state).id.toLong(),
+                noticeId = stop.noticeId.toLong(),
+                stateId = stop.stateId.toLong(),
                 recipient = stop.recipient,
                 direction = stop.direction,
                 directionPlaceId = stop.directionPlaceId,
@@ -96,9 +96,7 @@ class StopDao(
         return dbHelper.withDatabase { database ->
             val stop = database.stopQueries.selectById(id).executeAsOneOrNull()
                 ?: throw Exception("Stop not found")
-            //val stateDesc = StopStateEnum.fromId(stop.stopStateId.toInt()).description
-            val noticeDesc = StopNoticeEnum.fromId(stop.noticeId.toInt()).description
-            stop.toUserStop(notice = noticeDesc)
+            stop.toUserStop()
         }
     }
 
@@ -114,9 +112,7 @@ class StopDao(
     suspend fun selectPendingSync(): List<UserStop> {
         return dbHelper.withDatabase { database ->
             database.stopQueries.selectPendingSync().executeAsList().map { stop ->
-                //val stateDesc = StopStateEnum.fromId(stop.stopStateId.toInt()).description
-                val noticeDesc = StopNoticeEnum.fromId(stop.noticeId.toInt()).description
-                stop.toUserStop(noticeDescription = noticeDesc)
+                stop.toUserStop()
             }
         }
     }
@@ -126,20 +122,14 @@ class StopDao(
             // selectById ya no filtra isDeleted, trae cualquier estado
             val stop = database.stopQueries.selectById(id).executeAsOneOrNull()
                 ?: throw Exception("Stop not found")
-            //val stateDesc = StopStateEnum.fromId(stop.stopStateId.toInt()).description
-            val noticeDesc = StopNoticeEnum.fromId(stop.noticeId.toInt()).description
-            stop.toUserStop(
-                notice = noticeDesc
-            )
+            stop.toUserStop()
         }
     }
 
     suspend fun selectPendingDelete(): List<UserStop> {
         return dbHelper.withDatabase { database ->
             database.stopQueries.selectPendingDelete().executeAsList().map { stop ->
-                //val stateDesc = StopStateEnum.fromId(stop.stopStateId.toInt()).description
-                val noticeDesc = StopNoticeEnum.fromId(stop.noticeId.toInt()).description
-                stop.toUserStop(notice = noticeDesc)
+                stop.toUserStop()
             }
         }
     }
@@ -178,8 +168,8 @@ class StopDao(
                 existing == null -> database.stopQueries.insertFromApi(
                     id = stop.id,
                     routeId = routeId,
-                    noticeId = StopNoticeEnum.fromName(stop.notice).id.toLong(),
-                    stateId = StopStateEnum.fromName(stop.state).id.toLong(),
+                    noticeId = stop.noticeId.toLong(),
+                    stateId = stop.stateId.toLong(),
                     recipient = stop.recipient,
                     direction = stop.direction,
                     directionPlaceId = stop.directionPlaceId,
@@ -192,8 +182,8 @@ class StopDao(
                 existing.isSynced == 1L -> database.stopQueries.updateFromApi(
                     id = stop.id,
                     routeId = routeId,
-                    noticeId = StopNoticeEnum.fromName(stop.notice).id.toLong(),
-                    stateId = StopStateEnum.fromName(stop.state).id.toLong(),
+                    noticeId = stop.noticeId.toLong(),
+                    stateId = stop.stateId.toLong(),
                     recipient = stop.recipient,
                     direction = stop.direction,
                     directionPlaceId = stop.directionPlaceId,
@@ -244,11 +234,30 @@ class StopDao(
         }
     }
 
+    suspend fun upsertAllNotices(notices: List<Notices>) {
+        dbHelper.withDatabase { database ->
+            notices.forEach {
+                database.noticeQueries.upsert(
+                    id = it.id.toLong(),
+                    description = it.description
+                )
+            }
+        }
+    }
+
     fun observeAllStates(): Flow<List<StopState>> =
         dbHelper.withDatabaseFlow { database ->
             database.stopStateQueries.selectAll()
                 .asFlow()
                 .mapToList(Dispatchers.Default)
                 .map { list -> list.map { StopState(it.id.toInt(), it.description) } }
+        }
+
+    fun observeAllNotices(): Flow<List<Notices>> =
+        dbHelper.withDatabaseFlow { database ->
+            database.noticeQueries.selectAll()
+                .asFlow()
+                .mapToList(Dispatchers.Default)
+                .map { list -> list.map { Notices(it.id.toInt(), it.description) } }
         }
 }

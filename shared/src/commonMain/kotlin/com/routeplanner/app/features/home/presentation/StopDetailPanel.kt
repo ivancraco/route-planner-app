@@ -6,19 +6,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -34,17 +30,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.routeplanner.app.core.ui.RoutePlannerTheme
+import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.StopState
-import com.routeplanner.app.features.home.domain.model.StopStateEnum
 
 @Composable
 fun StopDetailPanel(
     state: StopDetailState,
     stopStates: List<StopState>,
+    notices: List<Notices>,
     onStateChange: (StopState) -> Unit,
     onNoteChange: (String) -> Unit,
     onSaveNote: () -> Unit,
@@ -54,8 +50,10 @@ fun StopDetailPanel(
     onDismiss: () -> Unit,
 ) {
     val stop = state.stop ?: return
-    val currentState = stopStates.find { it.description == stop.state }
-        ?: StopState(1, "PENDIENTE")
+
+    val currentState = stopStates.find { it.id == stop.stateId }
+        ?: StopState(10, "No Notificado")
+
     val shortAddress = stop.direction
         .split(",")
         .firstOrNull()
@@ -100,8 +98,9 @@ fun StopDetailPanel(
 
         // Info
         StopInfoRow(label = "Destinatario", value = stop.recipient)
-        StopInfoRow(label = "Carácter", value = stop.notice)
-        StopInfoRow(label = "Estado", value = stop.state)
+        StopInfoRow(label = "Carácter", value = notices.find { it.id == stop.noticeId }?.description
+            ?: "")
+        //StopInfoRow(label = "Estado", value = currentState.description)
 
         StopStateDropdown(
             current = currentState,
@@ -209,13 +208,13 @@ private fun StopStateDropdown(
             colors = stopFieldColors(),
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor()
+                .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryEditable)
         )
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
-            states.filter { it.id != 1 }.forEach { state ->
+            states.forEach { state ->
                 DropdownMenuItem(
                     text = { Text(state.description) },
                     onClick = {

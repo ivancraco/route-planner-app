@@ -1,6 +1,7 @@
 package com.routeplanner.app.features.home.domain.repository
 
 import com.routeplanner.app.features.home.data.remote.dto.StopOrderDto
+import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.UserStop
 import kotlinx.coroutines.flow.Flow
@@ -24,6 +25,8 @@ interface StopRepository {
     suspend fun deletePermanently(id: String)
     suspend fun reorderInApi(routeId: String, stops: List<StopOrderDto>)
     fun observeAllStates(): Flow<List<StopState>>
+    fun observeAllNotices(): Flow<List<Notices>>
     suspend fun getAllStates(): List<StopState>
     suspend fun syncStateFromApi(): Result<Unit>
+    suspend fun syncNoticesFromApi(): Result<Unit>
 }

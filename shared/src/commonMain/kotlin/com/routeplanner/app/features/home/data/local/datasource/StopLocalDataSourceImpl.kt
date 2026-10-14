@@ -1,6 +1,7 @@
 package com.routeplanner.app.features.home.data.local.datasource
 
 import com.routeplanner.app.features.home.data.local.dao.StopDao
+import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.UserStop
 import kotlinx.coroutines.flow.Flow
@@ -61,6 +62,10 @@ class StopLocalDataSourceImpl(
         return stopDao.observeAllStates()
     }
 
+    override fun observeAllNotices(): Flow<List<Notices>> {
+        return stopDao.observeAllNotices()
+    }
+
     override suspend fun getAllStates(): List<StopState> {
         return stopDao.getAllStates()
     }
@@ -71,5 +76,9 @@ class StopLocalDataSourceImpl(
 
     override suspend fun upsertAllStates(stopStates: List<StopState>) {
         stopDao.upsertAllStates(stopStates)
+    }
+
+    override suspend fun upsertAllNotices(notices: List<Notices>) {
+        stopDao.upsertAllNotices(notices)
     }
 }

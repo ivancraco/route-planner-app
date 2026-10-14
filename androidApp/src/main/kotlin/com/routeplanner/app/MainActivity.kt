@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.routeplanner.app.core.common.onAndroidForeground
+//import com.routeplanner.app.core.common.onAndroidForeground
 import com.routeplanner.app.core.utils.SyncManager
 
 class MainActivity : ComponentActivity() {
@@ -18,6 +18,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        onAndroidForeground()
+        //onAndroidForeground()
     }
 }

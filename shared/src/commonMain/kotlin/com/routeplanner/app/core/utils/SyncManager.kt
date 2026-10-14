@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.pow
@@ -25,12 +26,13 @@ class SyncManager(
     private var isFirstSync = true  // ← flag para el pull inicial
     fun start() {
         scope.launch {
-            connectivityObserver.isConnected.collectLatest { connected ->
+            connectivityObserver.isConnected.distinctUntilChanged().collectLatest { connected ->
                 if (connected) {
                     // pull de estados solo la primera vez que hay conexión
                     if (isFirstSync) {
                         isFirstSync = false
                         stopRepository.syncStateFromApi()
+                        stopRepository.syncNoticesFromApi()
                     }
                     startSyncLoop()
                 } else stopSyncLoop()

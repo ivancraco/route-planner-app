@@ -6,6 +6,7 @@ import com.routeplanner.app.features.home.data.remote.api.RouteApiServiceImpl
 import com.routeplanner.app.features.home.data.remote.api.StopApiService
 import com.routeplanner.app.features.home.data.remote.api.StopApiServiceImpl
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import org.koin.dsl.module
@@ -16,11 +17,12 @@ import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
 import kotlinx.serialization.json.Json
 import org.koin.core.qualifier.named
 
-const val BASE_URL = "http://192.168.0.13:8080/"
+const val BASE_URL = "http://172.50.1.201:8081"
 val AuthenticatedClient = named("authenticatedClient")
 val ExternalClient = named("externalClient")
 fun networkModule() = module {
@@ -36,7 +38,14 @@ fun networkModule() = module {
                     }
                 )
             }
-            install(Auth) {
+            install(DefaultRequest) {
+                url(urlString = BASE_URL)
+
+                session.getAccessToken()?.let {
+                    header(HttpHeaders.Authorization, "Bearer $it")
+                }
+            }
+            /*install(Auth) {
                 bearer {
                     loadTokens {
                         val access = session.getAccessToken()
@@ -44,7 +53,7 @@ fun networkModule() = module {
                         if (access != null) BearerTokens(access, refresh) else null
                     }
                 }
-            }
+            }*/
             install(Logging) {
                 logger = Logger.DEFAULT
                 level = LogLevel.ALL

@@ -6,14 +6,12 @@ import com.routeplanner.app.SelectPendingSync
 import com.routeplanner.app.SelectStopsWithDetailsByRouteId
 import com.routeplanner.app.features.home.domain.model.UserStop
 
-fun SelectById.toUserStop(
-    notice: String
-): UserStop =
+fun SelectById.toUserStop(): UserStop =
     UserStop(
         id = id,
         routeId = routeId,
-        notice = notice,
-        state = stateDescription,
+        noticeId = noticeId.toInt(),
+        stateId = stopStateId.toInt(),
         recipient = recipient,
         direction = direction,
         directionPlaceId = directionPlaceId,
@@ -27,8 +25,8 @@ fun SelectStopsWithDetailsByRouteId.toUserStop(): UserStop =
     UserStop(
         id = id,
         routeId = routeId,
-        notice = noticeDescription,
-        state = stateDescription,
+        noticeId = noticeId.toInt(),
+        stateId = stopStateId.toInt(),
         recipient = recipient,
         direction = direction,
         directionPlaceId = directionPlaceId,
@@ -38,14 +36,12 @@ fun SelectStopsWithDetailsByRouteId.toUserStop(): UserStop =
         note = note
     )
 
-fun SelectPendingSync.toUserStop(
-    noticeDescription: String
-): UserStop =
+fun SelectPendingSync.toUserStop(): UserStop =
     UserStop(
         id = id,
         routeId = routeId,
-        notice = noticeDescription,
-        state = stateDescription,
+        noticeId = noticeId.toInt(),
+        stateId = stopStateId.toInt(),
         recipient = recipient,
         direction = direction,
         directionPlaceId = directionPlaceId,
@@ -55,12 +51,12 @@ fun SelectPendingSync.toUserStop(
         note = note
     )
 
-fun SelectPendingDelete.toUserStop(notice: String): UserStop =
+fun SelectPendingDelete.toUserStop(): UserStop =
     UserStop(
         id = id,
         routeId = routeId,
-        notice = notice,
-        state = stateDescription,
+        noticeId = noticeId.toInt(),
+        stateId = stopStateId.toInt(),
         recipient = recipient,
         direction = direction,
         directionPlaceId = directionPlaceId,

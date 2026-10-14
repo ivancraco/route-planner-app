@@ -271,7 +271,7 @@ fun CreateRouteScreen(
                 onClearPlacesState()
                 showAddressSearch = false
             },
-            label = "Buscar origen"
+            //label = "Buscar origen"
         )
     }
 

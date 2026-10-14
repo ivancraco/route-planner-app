@@ -1,6 +1,5 @@
 package com.routeplanner.app.features.auth.data.remote
 
-import com.routeplanner.app.core.di.BASE_URL
 import com.routeplanner.app.features.auth.data.dto.ApiResponse
 import com.routeplanner.app.features.auth.data.dto.LoginRequestDto
 import com.routeplanner.app.features.auth.data.dto.LoginResponseDto
@@ -25,7 +24,7 @@ class AuthApi(
     private val httpClient: HttpClient
 ) {
     suspend fun login(username: String, password: String): ApiResponse<LoginResponseDto> {
-        return httpClient.post(BASE_URL + "users/login") {
+        return httpClient.post("users/login") {
             contentType(ContentType.Application.Json)
             setBody(LoginRequestDto(username = username, password = password))
         }.body()

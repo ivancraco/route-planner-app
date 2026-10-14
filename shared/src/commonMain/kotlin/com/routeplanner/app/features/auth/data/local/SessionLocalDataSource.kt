@@ -4,13 +4,6 @@ import com.routeplanner.app.features.auth.domain.model.Session
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.get
 
-/**
- * Guarda y recupera la sesión del usuario usando multiplatform-settings.
- * Se asume que la instancia de [Settings] ya está provista en tu Koin (core).
- * Si querés separarla en su propio "namespace" (para no mezclar con otras
- * preferencias) podés inyectar acá una Settings creada con
- * Settings.Factory().create("session_settings") en vez de la global.
- */
 class SessionLocalDataSource(
     private val settings: Settings
 ) {

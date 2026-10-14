@@ -17,15 +17,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.routeplanner.app.core.ui.RoutePlannerTheme
+import com.routeplanner.app.core.utils.SyncManager
 import com.routeplanner.app.features.auth.presentation.AuthScreen
 import com.routeplanner.app.features.auth.presentation.navigation.AuthRoute
 import com.routeplanner.app.features.auth.presentation.navigation.HomeNotifierRoute
 import com.routeplanner.app.features.auth.presentation.navigation.HomeSupervisorRoute
-import com.routeplanner.app.features.home.domain.model.StopStateEnum
 import com.routeplanner.app.features.home.presentation.CreateRouteScreen
 import com.routeplanner.app.features.home.presentation.NotifierViewModel
 import com.routeplanner.app.features.home.presentation.RoutePlannerScreen
 import kotlinx.serialization.Serializable
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Serializable
@@ -42,7 +43,8 @@ data class FindDirections(val addressType: String)
 
 @Composable
 fun NavigationWrapper(
-    viewModel: NotifierViewModel = koinViewModel()
+    viewModel: NotifierViewModel = koinViewModel(),
+    syncManager: SyncManager = koinInject()
 ) {
     val navController = rememberNavController()
     val routeState = viewModel.userRoute.collectAsState()
@@ -50,8 +52,9 @@ fun NavigationWrapper(
     val placesState = viewModel.placesState.collectAsState()
     val createRouteFormState by viewModel.createRouteFormState.collectAsStateWithLifecycle()
     val routePolyline by viewModel.routePolyline.collectAsStateWithLifecycle()
-
+    syncManager.start()
     viewModel.getAll()
+
     NavHost(navController = navController, startDestination = HomeNotifierRoute) {
         composable<Home> {
             /*RoutePlannerScreen(
@@ -162,13 +165,17 @@ fun NavigationWrapper(
         }
 
         composable<HomeNotifierRoute> {
+            syncManager.start()
             val stopStates by viewModel.stopStates.collectAsStateWithLifecycle()
+            val notices by viewModel.notices.collectAsStateWithLifecycle()
             RoutePlannerScreen(
                 userRoute = routeState.value,
                 allRoutes = allRoutes.value,
                 routePolyline = routePolyline,
                 stopStates = stopStates,
+                notices = notices,
                 onCreateRoute = { latitude, longitude ->
+                    println("pepe es bueno")
                     navController.navigate(NewRoute(latitude, longitude))
                 },
                 createRouteFormState = createRouteFormState,
@@ -236,10 +243,10 @@ fun NavigationWrapper(
                     viewModel.onSaveStopNote()
                 },
                 onMarkExitosa = { stop ->
-                    viewModel.onMarkStopState(stop, StopStateEnum.EXITOSA)
+                    //viewModel.onMarkStopState(stop, StopStateEnum.EXITOSA)
                 },
                 onMarkFallida = { stop ->
-                    viewModel.onMarkStopState(stop, StopStateEnum.FALLIDA)
+                    //viewModel.onMarkStopState(stop, StopStateEnum.FALLIDA)
                 },
                 onDeleteStop = { stopId ->
                     viewModel.onDeleteStop(stopId)

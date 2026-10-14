@@ -5,6 +5,7 @@ import com.routeplanner.app.features.home.data.remote.api.StopApiService
 import com.routeplanner.app.features.home.data.remote.dto.StopOrderDto
 import com.routeplanner.app.features.home.data.remote.dto.StopStateDto
 import com.routeplanner.app.features.home.data.remote.mapper.toDomain
+import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.UserStop
 import com.routeplanner.app.features.home.domain.model.toCreateStopDto
@@ -51,6 +52,15 @@ class StopRemoteDataSourceImpl(
         return try {
             val states = stopApiService.getStates()
             Result.success(states.map { it.toDomain() })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getNotices(): Result<List<Notices>> {
+        return try {
+            val notices = stopApiService.getNotices()
+            Result.success(notices.map { it.toDomain() })
         } catch (e: Exception) {
             Result.failure(e)
         }

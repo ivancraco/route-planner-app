@@ -6,5 +6,13 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
     <string>Permite que esta aplicación utilice tu ubicación</string>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
 </dict>
 </plist>

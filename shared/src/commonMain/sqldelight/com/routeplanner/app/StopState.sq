@@ -3,9 +3,16 @@ CREATE TABLE StopState (
     description TEXT NOT NULL
 );
 
-INSERT INTO StopState (id, description) VALUES (1, 'PENDIENTE');
-INSERT INTO StopState (id, description) VALUES (2, 'EXITOSA');
-INSERT INTO StopState (id, description) VALUES (3, 'FALLIDA');
+INSERT INTO StopState (id, description) VALUES (1, 'Entregado');
+INSERT INTO StopState (id, description) VALUES (2, 'Domicilio No Encontrado');
+INSERT INTO StopState (id, description) VALUES (3, 'No Recibido');
+INSERT INTO StopState (id, description) VALUES (4, 'Rechazado');
+INSERT INTO StopState (id, description) VALUES (5, 'Recibido Sin Firmar');
+INSERT INTO StopState (id, description) VALUES (6, 'Baldío');
+INSERT INTO StopState (id, description) VALUES (7, 'Espacio Público');
+INSERT INTO StopState (id, description) VALUES (8, 'Notificado Correctamente');
+INSERT INTO StopState (id, description) VALUES (9, 'Bajo Puerta');
+INSERT INTO StopState (id, description) VALUES (10, 'No Notificado');
 
 selectAll:
 SELECT * FROM StopState;

@@ -1,6 +1,7 @@
 package com.routeplanner.app.features.home.data.remote.datasource
 
 import com.routeplanner.app.features.home.data.remote.dto.StopOrderDto
+import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.UserStop
 
@@ -13,4 +14,5 @@ interface StopRemoteDataSource {
         stops: List<StopOrderDto>
     )
     suspend fun getStates(): Result<List<StopState>>
+    suspend fun getNotices(): Result<List<Notices>>
 }

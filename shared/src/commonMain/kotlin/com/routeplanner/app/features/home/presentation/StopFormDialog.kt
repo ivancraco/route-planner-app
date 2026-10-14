@@ -12,6 +12,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
@@ -28,13 +29,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.routeplanner.app.core.ui.RoutePlannerTheme
+import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.StopNoticeEnum
 
 @Composable
 fun StopFormDialog(
     state: StopFormState,
+    notices: List<Notices>,
     onRecipientChange: (String) -> Unit,
-    onNoticeChange: (StopNoticeEnum) -> Unit,
+    onNoticeChange: (Notices) -> Unit,
     onNoteChange: (String) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
@@ -75,6 +78,7 @@ fun StopFormDialog(
 
                 // Carácter
                 StopNoticeDropdown(
+                    notices = notices,
                     selected = state.notice,
                     onSelected = onNoticeChange
                 )
@@ -91,7 +95,7 @@ fun StopFormDialog(
 
                 Button(
                     onClick = onConfirm,
-                    enabled = state.recipient.isNotBlank() && !state.isLoading,
+                    enabled = state.recipient.isNotBlank() && !state.isLoading && state.notice != null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
@@ -121,8 +125,9 @@ fun StopFormDialog(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StopNoticeDropdown(
-    selected: StopNoticeEnum,
-    onSelected: (StopNoticeEnum) -> Unit
+    notices: List<Notices>,
+    selected: Notices?,
+    onSelected: (Notices) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(
@@ -130,7 +135,7 @@ private fun StopNoticeDropdown(
         onExpandedChange = { expanded = it }
     ) {
         OutlinedTextField(
-            value = selected.description,
+            value = selected?.description ?: "Seleccionar Intimación",
             onValueChange = {},
             readOnly = true,
             label = { Text("Carácter") },
@@ -138,13 +143,13 @@ private fun StopNoticeDropdown(
             colors = stopFieldColors(),
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor()
+                .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryEditable)
         )
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
-            StopNoticeEnum.entries.forEach { notice ->
+            notices.forEach { notice ->
                 DropdownMenuItem(
                     text = { Text(notice.description) },
                     onClick = {

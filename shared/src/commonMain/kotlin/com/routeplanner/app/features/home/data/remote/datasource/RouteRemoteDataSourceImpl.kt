@@ -1,7 +1,10 @@
 package com.routeplanner.app.features.home.data.remote.datasource
 
+import com.routeplanner.app.core.paging.PagedResult
+import com.routeplanner.app.features.home.data.local.mapper.toDomain
 import com.routeplanner.app.features.home.data.remote.api.RouteApiService
 import com.routeplanner.app.features.home.data.remote.mapper.toDomain
+import com.routeplanner.app.features.home.domain.model.SupervisorRouteSummary
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.toCreateRouteDto
 import com.routeplanner.app.features.home.domain.model.toUpdateRouteDto
@@ -35,5 +38,14 @@ class RouteRemoteDataSourceImpl(
     override suspend fun pullFromApi(userId: Long): List<UserRoute> {
         val result = routeApiService.pullFromApi(userId = userId)
         return result.map { it.toDomain() }
+    }
+
+    override suspend fun getPage(
+        username: String?,
+        page: Int,
+        pageSize: Int
+    ): PagedResult<SupervisorRouteSummary> {
+        val result = routeApiService.getPage(username, page, pageSize)
+        return result.toDomain()
     }
 }

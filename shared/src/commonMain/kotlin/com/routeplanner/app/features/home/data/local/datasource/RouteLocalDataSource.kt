@@ -17,7 +17,7 @@ interface RouteLocalDataSource {
     suspend fun selectByUserId(userId: Long): List<UserRoute>
     suspend fun selectPendingSync(): List<UserRoute>
     suspend fun selectPendingDelete(): List<UserRoute>
-    suspend fun observeRouteSummaries(): Flow<List<NotifierRouteSummary>>
+    suspend fun observeRouteSummaries(userId: Int): Flow<List<NotifierRouteSummary>>
     suspend fun markAsSynced(id: String)
     suspend fun upsertFromApi(route: UpdateRoute, userId: Long)
     suspend fun selectById(id: String): UserRoute?

@@ -1,7 +1,9 @@
 package com.routeplanner.app.features.home.domain.repository
 
+import com.routeplanner.app.core.paging.PagedResult
 import com.routeplanner.app.features.home.data.remote.api.OptimalRouteResult
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
+import com.routeplanner.app.features.home.domain.model.SupervisorRouteSummary
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.UserStop
 import kotlinx.coroutines.flow.Flow
@@ -13,6 +15,7 @@ interface RouteRepository {
     suspend fun selectAll(): List<UserRoute>
     suspend fun selectById(id: String): UserRoute?
     suspend fun selectByUserId(userId: Long): List<UserRoute>
+    suspend fun getPage(username: String?, page: Int, pageSize: Int): PagedResult<SupervisorRouteSummary>
 
     //Escritura local + sync
     suspend fun insertRoute(userRoute: UserRoute, userId: Int): String
@@ -43,7 +46,6 @@ interface RouteRepository {
     ): Result<OptimalRouteResult>
 
     suspend fun updatePolyline(routeId: String, encodedPolyline: String)
-
 
     //--------------------------------------
     suspend fun selectPendingSync(): Result<List<UserRoute>>

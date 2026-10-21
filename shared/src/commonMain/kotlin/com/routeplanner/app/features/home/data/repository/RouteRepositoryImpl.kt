@@ -1,7 +1,10 @@
 package com.routeplanner.app.features.home.data.repository
 
+import com.routeplanner.app.core.paging.PagedResult
 import com.routeplanner.app.core.utils.SyncManager
 import com.routeplanner.app.core.utils.SyncOperation
+import com.routeplanner.app.features.auth.data.local.SessionLocalDataSource
+import com.routeplanner.app.features.auth.domain.model.Session
 import com.routeplanner.app.features.home.data.local.datasource.RouteLocalDataSource
 import com.routeplanner.app.features.home.data.remote.api.OptimalRouteResult
 import com.routeplanner.app.features.home.data.remote.api.ReverseGeocodingApi
@@ -9,16 +12,19 @@ import com.routeplanner.app.features.home.data.remote.api.RoutesApi
 import com.routeplanner.app.features.home.data.remote.datasource.RouteRemoteDataSource
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
+import com.routeplanner.app.features.home.domain.model.SupervisorRouteSummary
 import com.routeplanner.app.features.home.domain.model.UserStop
 import com.routeplanner.app.features.home.domain.repository.RouteRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 class RouteRepositoryImpl(
     private val routeLocalDataSource: RouteLocalDataSource,
     private val routeRemoteDataSource: RouteRemoteDataSource,
     private val syncManager: Lazy<SyncManager>,
     private val reverseGeocodingApi: ReverseGeocodingApi,
-    private val optimalRouteApi: RoutesApi
+    private val optimalRouteApi: RoutesApi,
+    private val session: SessionLocalDataSource
 ) : RouteRepository {
 
     override fun observeRoute(id: String): Flow<UserRoute?> {
@@ -26,7 +32,10 @@ class RouteRepositoryImpl(
     }
 
     override suspend fun observeRouteSummaries(): Flow<List<NotifierRouteSummary>> {
-        return routeLocalDataSource.observeRouteSummaries()
+        session.getSession()?.let {
+            return routeLocalDataSource.observeRouteSummaries(userId = it.id)
+        }
+        return flow { listOf<List<NotifierRouteSummary>>() }
     }
 
     override suspend fun selectAll(): List<UserRoute> {
@@ -35,6 +44,19 @@ class RouteRepositoryImpl(
 
     override suspend fun selectByUserId(userId: Long): List<UserRoute> {
         return routeLocalDataSource.selectByUserId(userId = userId)
+    }
+
+    override suspend fun getPage(
+        username: String?,
+        page: Int,
+        pageSize: Int
+    ): PagedResult<SupervisorRouteSummary> {
+        return try {
+            val result = routeRemoteDataSource.getPage(username, page, pageSize)
+            result
+        } catch (e: Exception) {
+            throw e
+        }
     }
 
     override suspend fun insertRoute(

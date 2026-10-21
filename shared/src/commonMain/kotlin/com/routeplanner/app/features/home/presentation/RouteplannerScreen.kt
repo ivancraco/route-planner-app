@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -53,6 +55,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -246,6 +249,7 @@ fun RoutePlannerScreen(
             .fillMaxSize()
             .background(RoutePlannerTheme.colors.background)
             .navigationBarsPadding()
+            .statusBarsPadding()
     ) {
         containerHeightPx = with(density) { maxHeight.toPx() }
 
@@ -312,17 +316,22 @@ fun RoutePlannerScreen(
                                 }
                             }
                         }
-                        FloatingActionButton(
+                        Button(
                             onClick = {
                                 onCreateRoute(
                                     coordinates?.latitude,
                                     coordinates?.longitude,
                                 )
-                            }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                contentColor = MaterialTheme.colorScheme.onSecondary,
+                            ),
                         ) {
-                            Icon(
-                                Icons.Default.Add,
-                                "Crear nueva ruta"
+                            Text(
+                                text = "Nueva ruta",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                             )
                         }
                     }
@@ -406,7 +415,9 @@ fun RoutePlannerScreen(
                                     .size(width = 40.dp, height = 4.dp)
                                     .clip(RoundedCornerShape(2.dp))
                                     .background(
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                            alpha = 0.3f
+                                        )
                                     ),
                             )
                         }
@@ -477,9 +488,7 @@ fun RoutePlannerScreen(
                         )
                     },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp),
-                    shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusLg),
+                        .fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondary,
                         contentColor = MaterialTheme.colorScheme.onSecondary,
@@ -640,16 +649,13 @@ private fun RouteSheetContent(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceXs)) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
                     Text(
                         text = userRoute.name,
                         style = RoutePlannerTheme.typography.titleMedium,
                         color = RoutePlannerTheme.colors.onPrimary
-                    )
-                    Text(
-                        text = userRoute.state,
-                        style = RoutePlannerTheme.typography.bodySmall,
-                        color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f)
                     )
                     Text(
                         text = userRoute.createdAt.toArgentinaDateString(),
@@ -657,13 +663,21 @@ private fun RouteSheetContent(
                         color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f)
                     )
                 }
-                Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = onOptionsDialog) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert,
-                        contentDescription = null,
-                        tint = RoutePlannerTheme.colors.onPrimary,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = userRoute.state,
+                        style = RoutePlannerTheme.typography.bodySmall,
+                        color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f)
                     )
+                    IconButton(onClick = onOptionsDialog) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = null,
+                            tint = RoutePlannerTheme.colors.onPrimary,
+                        )
+                    }
                 }
             }
 
@@ -671,10 +685,11 @@ private fun RouteSheetContent(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .clip(shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusFull))
                     .clickable {
                         onSearchStop()
                     },
-                shape = RoundedCornerShape(12.dp),
+                //shape = RoundedCornerShape(size = RoutePlannerTheme.dimens.radiusFull),
                 color = MaterialTheme.colorScheme.surfaceVariant,
             ) {
                 Row(
@@ -705,6 +720,7 @@ private fun RouteSheetContent(
                     .fillMaxWidth()
                     .weight(1f),
                 contentPadding = PaddingValues(vertical = 4.dp),
+                //verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
             ) {
                 item {
                     StopRow(
@@ -724,12 +740,33 @@ private fun RouteSheetContent(
                         markerColor = Color.Blue,
                         onClick = {},
                         labelContent = {
-                            Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.Blue),
-                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .height(25.dp)
+                                        .width(2.dp)
+                                        .background(Color.Transparent)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.Blue),
+                                )
+                                Box(
+                                    modifier = Modifier.width(20.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .height(25.dp)
+                                            .width(2.dp)
+                                            .background(Color.Blue)
+                                    )
+                                }
+                            }
                         }
                     )
                 }
@@ -740,17 +777,36 @@ private fun RouteSheetContent(
                         markerColor = MarkerColors.waypoint,
                         onClick = { onStopClick(stop) },
                         labelContent = {
-                            Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.Blue),
-                                contentAlignment = Alignment.Center
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Text(
-                                    text = "${stop.order}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White,
+                                Box(
+                                    modifier = Modifier
+                                        .height(25.dp)
+                                        .width(2.dp)
+                                        .background(Color.Blue)
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.Blue),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "${stop.order}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White,
+                                    )
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .height(25.dp)
+                                        .width(2.dp)
+                                        .background(
+                                            if (stop.order < userRoute.userStops.size) Color.Blue
+                                            else Color.Transparent
+                                        )
                                 )
                             }
                         }
@@ -762,6 +818,36 @@ private fun RouteSheetContent(
                             thickness = 0.5.dp,
                         )
                     }*/
+                }
+                // Optimizar — solo si hay al menos 2 paradas
+                if ((userRoute.userStops.size) >= 2) {
+                    item {
+                        Button(
+                            onClick = onOptimizeRoute,
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = RoutePlannerTheme.colors.secondary.copy(alpha = 0.15f),
+                                contentColor = RoutePlannerTheme.colors.secondary
+                            )
+                        ) {
+                            if (isOptimizing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    strokeWidth = 2.dp,
+                                    color = RoutePlannerTheme.colors.secondary
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Route,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text("Optimizar ruta")
+                            }
+                        }
+                    }
                 }
                 /*item {
                     StopRow(
@@ -780,70 +866,27 @@ private fun RouteSheetContent(
                     )
                 }*/
             }
-
-            // Optimizar — solo si hay al menos 2 paradas
-            if ((userRoute.userStops.size) >= 2) {
-                Button(
-                    onClick = onOptimizeRoute,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(44.dp),
-                    shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusLg),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = RoutePlannerTheme.colors.secondary.copy(alpha = 0.15f),
-                        contentColor = RoutePlannerTheme.colors.secondary
-                    )
-                ) {
-                    if (isOptimizing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
-                            color = RoutePlannerTheme.colors.secondary
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.Route,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text("Optimizar ruta")
-                    }
-                }
-            }
         }
 
         Spacer(Modifier.height(12.dp))
 
-        if (userRoute != null && RouteStateEnum.fromName(userRoute.state).id == 1) {
-            Button(
-                onClick = onFinalizeRoute,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp),
-                shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusLg),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = MaterialTheme.colorScheme.onSecondary,
-                ),
-            ) {
-                Text(
-                    text = "Finalizar ruta",
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                )
-            }
-        } else {
-            FloatingActionButton(
-                onClick = onCreateRoute
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    "Crear nueva ruta"
-                )
-            }
+        Button(
+            onClick = {
+                if (userRoute != null && RouteStateEnum.fromName(userRoute.state).id == 1) onFinalizeRoute()
+                else onCreateRoute()
+            },
+            modifier = Modifier
+                .fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary,
+            ),
+        ) {
+            Text(
+                text = if (userRoute != null && RouteStateEnum.fromName(userRoute.state).id == 1) "Finalizar ruta" else "Crear nueva ruta",
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+            )
         }
-
-        Spacer(Modifier.height(12.dp))
     }
     /*Column(
         verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceXs),
@@ -1056,8 +1099,8 @@ private fun StopRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd))
-            .then(if (!isOriginOrDestination) Modifier.clickable { onClick() } else Modifier)
-            .padding(vertical = 14.dp),
+            .then(if (!isOriginOrDestination) Modifier.clickable { onClick() } else Modifier),
+        //.padding(vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -1073,7 +1116,7 @@ private fun StopRow(
             if (!isOriginOrDestination) {
                 Text(
                     text = stop.recipient,
-                    style = RoutePlannerTheme.typography.labelSmall,
+                    style = RoutePlannerTheme.typography.bodySmall,
                     color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -1081,7 +1124,7 @@ private fun StopRow(
                 if (stop.stateId != 0) {
                     Text(
                         text = state.find { it.id == stop.stateId }?.description ?: "",
-                        style = RoutePlannerTheme.typography.labelSmall,
+                        style = RoutePlannerTheme.typography.bodySmall,
                         color = if (stop.stateId == 10)
                             RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.4f)
                         else
@@ -1093,7 +1136,7 @@ private fun StopRow(
             } else {
                 Text(
                     text = "Origen",
-                    style = RoutePlannerTheme.typography.labelSmall,
+                    style = RoutePlannerTheme.typography.bodySmall,
                     color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f)
                 )
             }

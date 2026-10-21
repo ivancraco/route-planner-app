@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -97,10 +98,33 @@ fun StopDetailPanel(
         HorizontalDivider(color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.1f))
 
         // Info
-        StopInfoRow(label = "Destinatario", value = stop.recipient)
-        StopInfoRow(label = "Carácter", value = notices.find { it.id == stop.noticeId }?.description
-            ?: "")
+        //StopInfoRow(label = "Destinatario", value = stop.recipient)
+        //StopInfoRow(label = "Carácter", value = notices.find { it.id == stop.noticeId }?.description
+        //   ?: "")
         //StopInfoRow(label = "Estado", value = currentState.description)
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        all = RoutePlannerTheme.dimens.spaceMd
+                    ),
+                verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceXs)
+            ) {
+                Text(
+                    text = stop.recipient,
+                    style = RoutePlannerTheme.typography.titleLarge,
+                    color = RoutePlannerTheme.colors.onPrimary
+                )
+                Text(
+                    text = "${notices.find { it.id == stop.noticeId }?.description}",
+                    style = RoutePlannerTheme.typography.bodySmall,
+                    color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f)
+                )
+            }
+        }
 
         StopStateDropdown(
             current = currentState,

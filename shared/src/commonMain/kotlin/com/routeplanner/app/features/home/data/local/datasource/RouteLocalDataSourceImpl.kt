@@ -70,8 +70,8 @@ class RouteLocalDataSourceImpl(
         return routeDao.selectPendingDelete()
     }
 
-    override suspend fun observeRouteSummaries(): Flow<List<NotifierRouteSummary>> {
-        return routeDao.observeRouteSummaries()
+    override suspend fun observeRouteSummaries(userId: Int): Flow<List<NotifierRouteSummary>> {
+        return routeDao.observeRouteSummaries(userId)
     }
 
     override suspend fun markAsSynced(id: String) {

@@ -9,7 +9,6 @@ import com.routeplanner.app.features.home.domain.model.AddressSearchState
 import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
 import com.routeplanner.app.features.home.domain.model.RouteStateEnum
-import com.routeplanner.app.features.home.domain.model.StopNoticeEnum
 import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.UserStop
@@ -44,13 +43,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.Instant
-
-sealed class NotifierRouteState() {
-    object Idle : NotifierRouteState()
-    object Loading : NotifierRouteState()
-    data class Success(val data: List<UserRoute>) : NotifierRouteState()
-    data class Error(val message: String) : NotifierRouteState()
-}
 
 data class CreateRouteFormState(
     val name: String = "",
@@ -413,7 +405,7 @@ class NotifierViewModel(
         }
     }
 
-    fun getAll() {
+    fun getAllRoutesSummary() {
         viewModelScope.launch(Dispatchers.Default) {
             routeRepository.observeRouteSummaries().collectLatest {
                 routeSummary.value = it

@@ -236,9 +236,7 @@ fun CreateRouteScreen(
             enabled = formState.isValid && !formState.isResolvingOrigin,
             modifier = Modifier
                 .fillMaxWidth(0.6f)
-                .height(RoutePlannerTheme.dimens.buttonHeight)
                 .align(Alignment.CenterHorizontally),
-            shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd),
             colors = ButtonDefaults.buttonColors(
                 containerColor = RoutePlannerTheme.colors.secondary,
             ),

@@ -251,7 +251,7 @@ private fun SuggestionRow(
                 )
             }
         }
-        if (isSelected) {
+        /*if (isSelected) {
             Spacer(modifier = Modifier.weight(1f))
             Icon(
                 Icons.Default.Check,
@@ -259,6 +259,6 @@ private fun SuggestionRow(
                 modifier = Modifier.padding(end = RoutePlannerTheme.dimens.spaceSm),
                 tint = Color.Green
             )
-        }
+        }*/
     }
 }

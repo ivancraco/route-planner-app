@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -16,10 +17,12 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +35,7 @@ import com.routeplanner.app.core.ui.RoutePlannerTheme
 import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.StopNoticeEnum
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StopFormDialog(
     state: StopFormState,
@@ -42,80 +46,81 @@ fun StopFormDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = RoutePlannerTheme.colors.primaryContainer,
-            tonalElevation = 4.dp,
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
+            Text(
+                text = "Nuevo punto de entrega",
+                style = RoutePlannerTheme.typography.titleLarge,
+                color = RoutePlannerTheme.colors.onPrimary
+            )
+            val shortAddress = state.direction.split(",")
+                .firstOrNull()
+                ?.trim() ?: state.direction
+
+            Text(
+                text = shortAddress,
+                style = RoutePlannerTheme.typography.bodySmall,
+                color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.6f)
+            )
+
+            // Destinatario
+            OutlinedTextField(
+                value = state.recipient,
+                onValueChange = onRecipientChange,
+                label = { Text("Destinatario") },
+                singleLine = true,
+                colors = stopFieldColors(),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Carácter
+            StopNoticeDropdown(
+                notices = notices,
+                selected = state.notice,
+                onSelected = onNoticeChange
+            )
+
+            // Nota opcional
+            OutlinedTextField(
+                value = state.note,
+                onValueChange = onNoteChange,
+                label = { Text("Nota (opcional)") },
+                minLines = 2,
+                maxLines = 2,
+                colors = stopFieldColors(),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Button(
+                onClick = onConfirm,
+                enabled = state.recipient.isNotBlank() && !state.isLoading && state.notice != null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                )
             ) {
-                Text(
-                    text = "Nuevo punto de entrega",
-                    style = RoutePlannerTheme.typography.titleLarge,
-                    color = RoutePlannerTheme.colors.onPrimary
-                )
-
-                Text(
-                    text = state.direction,
-                    style = RoutePlannerTheme.typography.bodySmall,
-                    color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.6f)
-                )
-
-                // Destinatario
-                OutlinedTextField(
-                    value = state.recipient,
-                    onValueChange = onRecipientChange,
-                    label = { Text("Destinatario") },
-                    singleLine = true,
-                    colors = stopFieldColors(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                // Carácter
-                StopNoticeDropdown(
-                    notices = notices,
-                    selected = state.notice,
-                    onSelected = onNoticeChange
-                )
-
-                // Nota opcional
-                OutlinedTextField(
-                    value = state.note,
-                    onValueChange = onNoteChange,
-                    label = { Text("Nota (opcional)") },
-                    maxLines = 3,
-                    colors = stopFieldColors(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Button(
-                    onClick = onConfirm,
-                    enabled = state.recipient.isNotBlank() && !state.isLoading && state.notice != null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
+                if (state.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.secondary
                     )
-                ) {
-                    if (state.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Text(
-                            text = "Crear punto de entrega",
-                            color = MaterialTheme.colorScheme.onSecondary
-                        )
-                    }
+                } else {
+                    Text(
+                        text = "Crear punto de entrega",
+                        color = MaterialTheme.colorScheme.onSecondary
+                    )
                 }
             }
         }
@@ -135,7 +140,7 @@ private fun StopNoticeDropdown(
         onExpandedChange = { expanded = it }
     ) {
         OutlinedTextField(
-            value = selected?.description ?: "Seleccionar Intimación",
+            value = selected?.description ?: "Seleccionar Carácter",
             onValueChange = {},
             readOnly = true,
             label = { Text("Carácter") },

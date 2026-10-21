@@ -150,7 +150,7 @@ private fun AuthContent(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Iniciar sesión", color = RoutePlannerTheme.colors.onPrimary, fontWeight = FontWeight.Medium)
+                    Text("Iniciar sesión", color = RoutePlannerTheme.colors.onSecondary, fontWeight = FontWeight.Medium)
                 }
             }
         }

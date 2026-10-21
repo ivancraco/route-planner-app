@@ -1,30 +1,27 @@
 package com.routeplanner.app.features.home.presentation.navigation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.routeplanner.app.core.ui.RoutePlannerTheme
 import com.routeplanner.app.core.utils.SyncManager
 import com.routeplanner.app.features.auth.presentation.AuthScreen
 import com.routeplanner.app.features.auth.presentation.navigation.AuthRoute
-import com.routeplanner.app.features.auth.presentation.navigation.HomeNotifierRoute
-import com.routeplanner.app.features.auth.presentation.navigation.HomeSupervisorRoute
+import com.routeplanner.app.features.home.presentation.NotifierHomeRoute
+import com.routeplanner.app.features.home.presentation.SupervisorHomeRoute
 import com.routeplanner.app.features.home.presentation.CreateRouteScreen
 import com.routeplanner.app.features.home.presentation.NotifierViewModel
 import com.routeplanner.app.features.home.presentation.RoutePlannerScreen
+import com.routeplanner.app.features.home.presentation.SupervisorDetailRoute
+import com.routeplanner.app.features.home.presentation.SupervisorHomeScreen
+import com.routeplanner.app.features.home.presentation.SupervisorRouteDetailScreen
+import com.routeplanner.app.features.home.presentation.SupervisorViewModel
 import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -44,6 +41,7 @@ data class FindDirections(val addressType: String)
 @Composable
 fun NavigationWrapper(
     viewModel: NotifierViewModel = koinViewModel(),
+    //supervisorViewModel: SupervisorViewModel = koinViewModel(),
     syncManager: SyncManager = koinInject()
 ) {
     val navController = rememberNavController()
@@ -52,10 +50,8 @@ fun NavigationWrapper(
     val placesState = viewModel.placesState.collectAsState()
     val createRouteFormState by viewModel.createRouteFormState.collectAsStateWithLifecycle()
     val routePolyline by viewModel.routePolyline.collectAsStateWithLifecycle()
-    syncManager.start()
-    viewModel.getAll()
 
-    NavHost(navController = navController, startDestination = HomeNotifierRoute) {
+    NavHost(navController = navController, startDestination = AuthRoute) {
         composable<Home> {
             /*RoutePlannerScreen(
                 route = routeState.value,
@@ -137,7 +133,7 @@ fun NavigationWrapper(
         composable<AuthRoute> {
             AuthScreen(
                 onNavigateAfterLogin = { isSupervisor ->
-                    val destination = if (isSupervisor) HomeSupervisorRoute else HomeNotifierRoute
+                    val destination = if (isSupervisor) SupervisorHomeRoute else NotifierHomeRoute
                     navController.navigate(destination) {
                         popUpTo<AuthRoute> { inclusive = true }
                     }
@@ -145,27 +141,55 @@ fun NavigationWrapper(
             )
         }
 
-        composable<HomeSupervisorRoute> {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(RoutePlannerTheme.colors.primary)
-                    .statusBarsPadding()
-                    .padding(
-                        horizontal = RoutePlannerTheme.dimens.contentPaddingHorizontal,
-                        vertical = RoutePlannerTheme.dimens.contentPaddingVertical
-                    )
-            ) {
-                Text(
-                    text = "Supervisor",
-                    style = RoutePlannerTheme.typography.titleLarge,
-                    color = RoutePlannerTheme.colors.onPrimary
+        composable<SupervisorHomeRoute> {
+            val supervisorViewModel: SupervisorViewModel = koinViewModel()
+            val supervisorRouteState by supervisorViewModel.supervisorRouteState.collectAsStateWithLifecycle()
+            val state by supervisorViewModel.state.collectAsStateWithLifecycle()
+            SupervisorHomeScreen(
+                state = state,
+                supervisorRouteState = supervisorRouteState,
+                onLoadMore = {
+                    supervisorViewModel.loadNextPage()
+                },
+                onSearch = { query ->
+                    if (query.isEmpty()) {
+                        supervisorViewModel.setUsername(null)
+                        supervisorViewModel.refresh()
+                        //supervisorViewModel.getAllRoutesFromApi()
+                    } else {
+                        supervisorViewModel.setUsername(query)
+                        supervisorViewModel.refresh()
+                        //supervisorViewModel.getRouteByUsername(query)
+                    }
+                },
+                onRetry = { supervisorViewModel.loadNextPage() },
+                onRouteSelected = { routeSelected ->
+                    supervisorViewModel.setRouteSummary(routeSelected)
+                    navController.navigate(SupervisorDetailRoute)
+                }
+            )
+        }
+
+        composable<SupervisorDetailRoute> {
+            val parentEntry = remember(navController.currentBackStackEntry) {
+                navController.getBackStackEntry(SupervisorHomeRoute)
+            }
+            val supervisorViewModel: SupervisorViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
+            supervisorViewModel.routeSummarySelected?.let {
+                SupervisorRouteDetailScreen(
+                    route = it,
+                    onBack = {
+                        if (navController.previousBackStackEntry != null) {
+                            navController.popBackStack()
+                        }
+                    }
                 )
             }
         }
 
-        composable<HomeNotifierRoute> {
+        composable<NotifierHomeRoute> {
             syncManager.start()
+            viewModel.getAllRoutesSummary()
             val stopStates by viewModel.stopStates.collectAsStateWithLifecycle()
             val notices by viewModel.notices.collectAsStateWithLifecycle()
             RoutePlannerScreen(

@@ -38,7 +38,6 @@ class AuthRepositoryImpl(
         return try {
             val response = authApi.login(username, password)
             if (response.success && response.data != null) {
-                println("Login response: $response")
                 val session = response.data.toDomain()
                 sessionLocalDataSource.saveSession(session)
                 Result.Success(session)

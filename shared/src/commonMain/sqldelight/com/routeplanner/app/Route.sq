@@ -135,7 +135,7 @@ WHERE Route.id = :id AND isDeleted = 0;
 selectRouteSummaries:
 SELECT id, name, createdAt
 FROM Route
-WHERE isDeleted = 0
+WHERE Route.userId = :userId AND isDeleted = 0
 ORDER BY createdAt DESC;
 
 deleteById:

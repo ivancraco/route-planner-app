@@ -30,7 +30,8 @@ fun dataModule() = module {
             routeRemoteDataSource = get(),
             syncManager = inject(),  // ← lazy para romper ciclo
             reverseGeocodingApi = get(),
-            optimalRouteApi = get()
+            optimalRouteApi = get(),
+            get()
         )
     }
     single<StopLocalDataSource> { StopLocalDataSourceImpl(get()) }

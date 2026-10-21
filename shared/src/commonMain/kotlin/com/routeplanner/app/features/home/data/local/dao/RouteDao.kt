@@ -26,12 +26,6 @@ class RouteDao(
         id: String
     ): Flow<UserRoute?> {
         return dbHelper.withDatabaseFlow { database ->
-            println("-----id: $id")
-            /*val stops = database.stopQueries
-                .selectStopsWithDetailsByRouteId(id)
-                .awaitAsList()
-                .map { it.toNotifierStop() }*/
-
             val stopsFlow = database.stopQueries
                 .selectStopsWithDetailsByRouteId(id)
                 .asFlow()
@@ -153,9 +147,9 @@ class RouteDao(
         }
     }
 
-    suspend fun observeRouteSummaries(): Flow<List<NotifierRouteSummary>> =
+    suspend fun observeRouteSummaries(userId: Int): Flow<List<NotifierRouteSummary>> =
         dbHelper.withDatabase { db ->
-            db.routeQueries.selectRouteSummaries()
+            db.routeQueries.selectRouteSummaries(userId.toLong())
                 .asFlow()
                 .mapToList(Dispatchers.Default)
                 .map { it.map { route -> route.toUserRouteSummary() } }

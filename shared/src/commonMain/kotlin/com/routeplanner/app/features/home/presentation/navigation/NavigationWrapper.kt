@@ -51,7 +51,7 @@ fun NavigationWrapper(
     val createRouteFormState by viewModel.createRouteFormState.collectAsStateWithLifecycle()
     val routePolyline by viewModel.routePolyline.collectAsStateWithLifecycle()
 
-    NavHost(navController = navController, startDestination = AuthRoute) {
+    NavHost(navController = navController, startDestination = NotifierHomeRoute) {
         composable<Home> {
             /*RoutePlannerScreen(
                 route = routeState.value,

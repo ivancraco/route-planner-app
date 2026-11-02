@@ -10,7 +10,7 @@ actual class DatabaseFactory(
     private val context: Context
 ) {
     actual suspend fun createDriver(): SqlDriver {
-        //context.deleteDatabase(DB_FILE_NAME)
+        context.deleteDatabase(DB_FILE_NAME)
         return AndroidSqliteDriver(
             AppDatabase.Schema.synchronous(),
             context,

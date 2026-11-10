@@ -28,13 +28,10 @@ class StopDao(
 
     suspend fun insertStop(stop: UserStop, routeId: String): String {
         return dbHelper.withDatabase { database ->
-            println("--onCreateStop--3")
-            val newId = generateId()
             val order = database.stopQueries
                 .selectByRouteId(routeId)
                 .executeAsList()
                 .size + 1
-            println("--id: ${stop.id}")
             database.stopQueries.insert(
                 id = stop.id,
                 routeId = routeId,
@@ -42,6 +39,7 @@ class StopDao(
                 stateId = stop.stateId.toLong(),
                 recipient = stop.recipient,
                 direction = stop.direction,
+                directionDetail = stop.directionDetail,
                 directionPlaceId = stop.directionPlaceId,
                 latitude = stop.latitude,
                 longitude = stop.longitude,
@@ -60,6 +58,7 @@ class StopDao(
                 stateId = stop.stateId.toLong(),
                 recipient = stop.recipient,
                 direction = stop.direction,
+                directionDetail = stop.directionDetail,
                 directionPlaceId = stop.directionPlaceId,
                 latitude = stop.latitude,
                 longitude = stop.longitude,
@@ -172,6 +171,7 @@ class StopDao(
                     stateId = stop.stateId.toLong(),
                     recipient = stop.recipient,
                     direction = stop.direction,
+                    directionDetail = stop.directionDetail,
                     directionPlaceId = stop.directionPlaceId,
                     latitude = stop.latitude,
                     longitude = stop.longitude,
@@ -186,6 +186,7 @@ class StopDao(
                     stateId = stop.stateId.toLong(),
                     recipient = stop.recipient,
                     direction = stop.direction,
+                    directionDetail = stop.directionDetail,
                     directionPlaceId = stop.directionPlaceId,
                     latitude = stop.latitude,
                     longitude = stop.longitude,

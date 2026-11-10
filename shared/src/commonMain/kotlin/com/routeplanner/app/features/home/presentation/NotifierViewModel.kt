@@ -52,6 +52,7 @@ data class CreateRouteFormState(
     val originLongitude: Double = 0.0,
     val selectedDate: Instant = Clock.System.now(),
     val isResolvingOrigin: Boolean = false,
+    val isOriginResolved: Boolean = false,
     val isOptimizing: Boolean = false,
     val error: String? = null
 ) {
@@ -84,6 +85,8 @@ class NotifierViewModel(
     val routePolyline = _routePolyline.asStateFlow()
 
     private val _currentLocation = MutableStateFlow<LocationBias?>(null)
+    private val _coordinates = MutableStateFlow<Coordinates?>(null)
+    val coordinates = _coordinates.asStateFlow()
     private val locationBiasProvider: suspend () -> LocationBias? = {
         _currentLocation.value
     }
@@ -174,6 +177,12 @@ class NotifierViewModel(
                     center = LatLngDto(latitude, longitude),
                     radius = 25_000.0
                 )
+            )
+        }
+        _coordinates.update {
+            Coordinates(
+                latitude,
+                longitude
             )
         }
     }
@@ -281,7 +290,8 @@ class NotifierViewModel(
                             _createRouteFormState.update {
                                 it.copy(
                                     originDir = address,
-                                    isResolvingOrigin = false
+                                    isResolvingOrigin = false,
+                                    isOriginResolved = true
                                 )
                             }
                         },
@@ -477,9 +487,7 @@ class NotifierViewModel(
     // ─── Crear parada ─────────────────────────────────────────────
 
     fun onSearchStopClick() {
-        println("onSearchStopClick")
         _stopFormState.update { it.copy(isSearchingDirection = true) }
-        println("-----${_stopFormState.value}")
     }
 
     fun onStopDirectionSelected(
@@ -500,8 +508,38 @@ class NotifierViewModel(
         }
     }
 
+    fun onStopReverseGeocoding(latitude: Double, longitude: Double) {
+        viewModelScope.launch {
+            routeRepository
+                .getAddressFromCoordinates(latitude, longitude)
+                .fold(
+                    onSuccess = { address ->
+                        _stopFormState.update {
+                            it.copy(
+                                direction = address,
+                                directionPlaceId = null,
+                                latitude = latitude,
+                                longitude = longitude,
+                                isSearchingDirection = false,
+                                isFillingForm = true
+                            )
+                        }
+                    },
+                    onFailure = {
+                        _stopFormState.update {
+                            StopFormState()
+                        }
+                    }
+                )
+        }
+    }
+
     fun onStopRecipientChange(value: String) =
         _stopFormState.update { it.copy(recipient = value) }
+
+    fun onDirectionDetailChange(value: String) {
+        _stopFormState.update{ it.copy(directionDetail = value) }
+    }
 
     fun onStopNoticeChange(value: Notices) =
         _stopFormState.update { it.copy(notice = value) }
@@ -513,7 +551,6 @@ class NotifierViewModel(
         _stopFormState.update { StopFormState() }
 
     fun onCreateStop() {
-        println("--onCreateStop--1")
         val form = _stopFormState.value
         val routeId = userRoute.value?.id ?: return
         viewModelScope.launch {
@@ -526,13 +563,13 @@ class NotifierViewModel(
                     stateId = 10,
                     recipient = form.recipient,
                     direction = form.direction,
+                    directionDetail = form.directionDetail,
                     directionPlaceId = form.directionPlaceId,
                     latitude = form.latitude,
                     longitude = form.longitude,
                     order = 0,
                     note = form.note.ifBlank { null }
                 )
-                println("--id: ${newStop.id}")
                 stopRepository.insertStop(newStop, routeId)
                 _stopFormState.update { StopFormState() }
             } catch (e: Exception) {

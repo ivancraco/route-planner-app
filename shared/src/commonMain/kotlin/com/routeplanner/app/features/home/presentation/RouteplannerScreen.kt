@@ -32,6 +32,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Route
@@ -146,6 +147,7 @@ fun RoutePlannerScreen(
     onStopRecipientChange: (String) -> Unit,
     onStopNoticeChange: (Notices) -> Unit,
     onStopNoteChange: (String) -> Unit,
+    onStopReverseGeocoding: (Double, Double) -> Unit,
     onDismissStopForm: () -> Unit,
     onCreateStop: () -> Unit,
     onStopClick: (UserStop) -> Unit,
@@ -507,7 +509,8 @@ fun RoutePlannerScreen(
             RouteOptions(
                 onDismiss = { showOptionsDialog = false },
                 onEditRoute = { showEditDialog = true },
-                onDelete = { showConfirmDeleteRoute = true }
+                onDelete = { showConfirmDeleteRoute = true },
+                onFinalize = {}
             )
         }
 
@@ -553,7 +556,7 @@ fun RoutePlannerScreen(
 
         // Dialog búsqueda de dirección para parada
         if (stopFormState.isSearchingDirection) {
-            AddressSearchField(
+            /*AddressSearchField(
                 state = placesState,
                 onAddressSelected = { suggestion, address ->
                     onStopDirectionSelected(
@@ -571,12 +574,34 @@ fun RoutePlannerScreen(
                     onDismissStopSearch()
                 },
                 //label = "Buscar punto de entrega"
-            )
+            )*/
+            /*AddressSearchField2(
+                state = placesState,
+                latitude = -31.39684965666937,
+                longitude = -58.017147576961506,
+                onAddressSelected = { suggestion, address ->
+                    onStopDirectionSelected(
+                        address.formattedAddress,
+                        suggestion.placeId,
+                        address.latitude,
+                        address.longitude
+                    )
+                },
+                onValueChange = onQueryChanged,
+                onClear = onClearQuery,
+                onSuggestionSelected = onSuggestionSelected,
+                onReverseGeocoding = onStopReverseGeocoding,
+                onDismiss = {
+                    onClearPlacesState()
+                    onDismissStopSearch()
+                },
+                //label = "Buscar punto de entrega"
+            )*/
         }
 
         // Dialog formulario de parada
         if (stopFormState.isFillingForm) {
-            StopFormDialog(
+            /*StopFormDialog(
                 state = stopFormState,
                 notices = notices,
                 onRecipientChange = onStopRecipientChange,
@@ -584,7 +609,7 @@ fun RoutePlannerScreen(
                 onNoteChange = onStopNoteChange,
                 onConfirm = onCreateStop,
                 onDismiss = onDismissStopForm
-            )
+            )*/
         }
     }
 }
@@ -730,6 +755,7 @@ private fun RouteSheetContent(
                             recipient = "",
                             noticeId = 0,
                             stateId = 0,
+                            directionDetail = null,
                             latitude = userRoute.originLatitude,
                             longitude = userRoute.originLongitude,
                             order = 0, note = null,
@@ -1071,7 +1097,7 @@ private fun StopRow(
 }*/
 
 @Composable
-private fun StopRow(
+fun StopRow(
     stop: UserStop,
     state: List<StopState>,
     markerColor: Color = MarkerColors.waypoint,
@@ -1150,6 +1176,7 @@ fun RouteOptions(
     onDismiss: () -> Unit,
     onEditRoute: () -> Unit,
     onDelete: () -> Unit,
+    onFinalize: () -> Unit
 ) {
     ModalBottomSheet(
         containerColor = RoutePlannerTheme.colors.primaryContainer,
@@ -1169,6 +1196,29 @@ fun RouteOptions(
                 .navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceLg),
         ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(RoutePlannerTheme.dimens.spaceXl)
+                    .clip(RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd))
+                    .clickable {
+                        onDismiss()
+                        onFinalize()
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Flag,
+                    contentDescription = null,
+                    tint = RoutePlannerTheme.colors.onPrimary,
+                )
+                Text(
+                    text = "Finalizar ruta",
+                    style = RoutePlannerTheme.typography.bodyMedium,
+                    color = RoutePlannerTheme.colors.onPrimary,
+                )
+            }
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

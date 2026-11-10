@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -73,6 +72,7 @@ fun CreateRouteScreen(
     onClear: () -> Unit,
     onClearPlacesState: () -> Unit,
     onSuggestionSelected: (AddressSuggestion, (SelectedAddress) -> Unit) -> Unit,
+    onNavigateToAddressSearchScreen: () -> Unit
 ) {
     var showAddressSearch by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
@@ -160,7 +160,10 @@ fun CreateRouteScreen(
                     .clip(RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd))
                     .background(RoutePlannerTheme.colors.primaryContainer)
                     .padding(horizontal = RoutePlannerTheme.dimens.spaceSm)
-                    .clickable { showAddressSearch = true },
+                    .clickable {
+                        if (!formState.isResolvingOrigin)
+                            onNavigateToAddressSearchScreen()
+                    },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm),
             ) {
@@ -250,8 +253,8 @@ fun CreateRouteScreen(
     }
 
     // Dialog búsqueda de origen
-    if (showAddressSearch) {
-        AddressSearchField(
+    /*if (showAddressSearch) {
+        AddressSearchField2(
             state = placesState,
             onAddressSelected = { suggestion, selected ->
                 onOriginSelected(
@@ -263,7 +266,7 @@ fun CreateRouteScreen(
                 showAddressSearch = false
             },
             onValueChange = onValueChange,
-            clear = onClear,
+            onClear = onClear,
             onSuggestionSelected = onSuggestionSelected,
             onDismiss = {
                 onClearPlacesState()
@@ -271,7 +274,7 @@ fun CreateRouteScreen(
             },
             //label = "Buscar origen"
         )
-    }
+    }*/
 
     // DatePicker dialog
     if (showDatePicker) {

@@ -52,7 +52,8 @@ class RouteDao(
             //val newId = generateId()
             database.routeQueries.insert(
                 id = userRoute.id,
-                userId = userId.toLong(),
+                //userId = userId.toLong(),
+                userId = 1L,
                 stateId = RouteStateEnum.fromName(userRoute.state).id.toLong(),
                 name = userRoute.name,
                 createdAt = userRoute.createdAt,
@@ -149,7 +150,7 @@ class RouteDao(
 
     suspend fun observeRouteSummaries(userId: Int): Flow<List<NotifierRouteSummary>> =
         dbHelper.withDatabase { db ->
-            db.routeQueries.selectRouteSummaries(userId.toLong())
+            db.routeQueries.selectRouteSummaries(1L)
                 .asFlow()
                 .mapToList(Dispatchers.Default)
                 .map { it.map { route -> route.toUserRouteSummary() } }

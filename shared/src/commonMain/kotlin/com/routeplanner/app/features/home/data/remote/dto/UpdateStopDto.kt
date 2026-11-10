@@ -8,6 +8,7 @@ data class UpdateStopDto(
     val noticeId: Int? = null,
     val recipientName: String? = null,
     val direction: String? = null,
+    val directionDetail: String? = null,
     val directionPlaceId: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,

@@ -78,7 +78,7 @@ fun rememberLeftPanelState(): LeftPanelState = remember { LeftPanelState() }
 fun LeftPanelOverlay(
     state: LeftPanelState,
     modifier: Modifier = Modifier,
-    panelWidth: Dp = 300.dp,
+    panelWidth: Dp = 250.dp,
     scrimColor: Color = Color.Black.copy(alpha = 0.4f),
     panelContent: @Composable () -> Unit,
     //content: @Composable () -> Unit,

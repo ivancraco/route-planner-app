@@ -32,10 +32,11 @@ class RouteRepositoryImpl(
     }
 
     override suspend fun observeRouteSummaries(): Flow<List<NotifierRouteSummary>> {
-        session.getSession()?.let {
+        return routeLocalDataSource.observeRouteSummaries(userId = 1)
+        /*session.getSession()?.let {
             return routeLocalDataSource.observeRouteSummaries(userId = it.id)
         }
-        return flow { listOf<List<NotifierRouteSummary>>() }
+        return flow { listOf<List<NotifierRouteSummary>>() }*/
     }
 
     override suspend fun selectAll(): List<UserRoute> {

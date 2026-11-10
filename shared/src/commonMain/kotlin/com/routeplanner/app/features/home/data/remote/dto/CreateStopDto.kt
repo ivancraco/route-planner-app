@@ -10,6 +10,7 @@ data class CreateStopDto(
     @SerialName("stateId") val stateId: Int,
     @SerialName("recipient") val recipient: String,
     @SerialName("direction") val direction: String,
+    @SerialName("directionDetail") val directionDetail: String?,
     @SerialName("directionPlaceId") val directionPlaceId: String?,
     @SerialName("latitude") val latitude: Double,
     @SerialName("longitude") val longitude: Double,

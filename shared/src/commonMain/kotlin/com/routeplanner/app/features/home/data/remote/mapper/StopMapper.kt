@@ -17,6 +17,7 @@ fun CreateStopDto.toDomain(routeId: String): UserStop {
         stateId = stateId,
         recipient = recipient,
         direction = direction,
+        directionDetail = directionDetail,
         directionPlaceId = directionPlaceId,
         latitude = latitude,
         longitude = longitude,

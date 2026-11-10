@@ -4,7 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,11 +15,14 @@ import androidx.navigation.toRoute
 import com.routeplanner.app.core.utils.SyncManager
 import com.routeplanner.app.features.auth.presentation.AuthScreen
 import com.routeplanner.app.features.auth.presentation.navigation.AuthRoute
+import com.routeplanner.app.features.home.presentation.AddressSearchField2
 import com.routeplanner.app.features.home.presentation.NotifierHomeRoute
 import com.routeplanner.app.features.home.presentation.SupervisorHomeRoute
 import com.routeplanner.app.features.home.presentation.CreateRouteScreen
+import com.routeplanner.app.features.home.presentation.MainScreen
 import com.routeplanner.app.features.home.presentation.NotifierViewModel
-import com.routeplanner.app.features.home.presentation.RoutePlannerScreen
+import com.routeplanner.app.features.home.presentation.StopDetailPanel
+import com.routeplanner.app.features.home.presentation.StopFormDialog
 import com.routeplanner.app.features.home.presentation.SupervisorDetailRoute
 import com.routeplanner.app.features.home.presentation.SupervisorHomeScreen
 import com.routeplanner.app.features.home.presentation.SupervisorRouteDetailScreen
@@ -37,6 +42,24 @@ data class NewRoute(
 
 @Serializable
 data class FindDirections(val addressType: String)
+
+@Serializable
+data class SearchDirectionRoute(
+    val latitude: Double = -31.39684965666937,
+    val longitude: Double = -58.017147576961506
+)
+
+@Serializable
+data class SearchDirectionStop(
+    val latitude: Double = -31.39684965666937,
+    val longitude: Double = -58.017147576961506
+)
+
+@Serializable
+object FormStop
+
+@Serializable
+object StopDetail
 
 @Composable
 fun NavigationWrapper(
@@ -71,9 +94,14 @@ fun NavigationWrapper(
             )*/
         }
         composable<NewRoute> {
-            val data = it.toRoute<NewRoute>()
-            LaunchedEffect(Unit) {
-                viewModel.onOpenCreateRoute(data.latitude, data.longitude)
+            val coordinates by viewModel.coordinates.collectAsStateWithLifecycle()
+            LaunchedEffect(coordinates) {
+                if (coordinates != null && !createRouteFormState.isOriginResolved) {
+                    viewModel.onOpenCreateRoute(
+                        currentLatitude = coordinates!!.latitude,
+                        currentLongitude = coordinates!!.longitude
+                    )
+                }
             }
             CreateRouteScreen(
                 placesState = placesState.value,
@@ -111,6 +139,14 @@ fun NavigationWrapper(
                 onOriginSelected = { address, placeId, latitude, longitude ->
                     viewModel.onCreateRouteOriginSelected(address, placeId, latitude, longitude)
                 },
+                onNavigateToAddressSearchScreen = {
+                    navController.navigate(
+                        SearchDirectionRoute(
+                            latitude = coordinates?.latitude ?: -31.39684965666937,
+                            longitude = coordinates?.longitude ?: -58.017147576961506
+                        )
+                    )
+                }
             )
         }
         composable<FindDirections> {
@@ -130,6 +166,171 @@ fun NavigationWrapper(
                 label = "Buscar dirección"
             )*/
         }
+
+        composable<SearchDirectionRoute> {
+            val data = it.toRoute<SearchDirectionRoute>()
+            var latitude by remember { mutableStateOf(data.latitude) }
+            var longitude by remember { mutableStateOf(data.longitude) }
+
+            AddressSearchField2(
+                state = placesState.value,
+                latitude = latitude,
+                longitude = longitude,
+                onConfirmAction = {
+                    viewModel.clear()
+                    navController.popBackStack()
+                },
+                onBack = {
+                    viewModel.clear()
+                    if (navController.previousBackStackEntry != null)
+                        navController.popBackStack()
+                },
+                onValueChange = { value ->
+                    viewModel.onQueryChanged(value)
+                },
+                onAddressSelected = { suggestion, selected ->
+                    latitude = selected.latitude
+                    longitude = selected.longitude
+                    //println("datos: $latitude $longitude")
+                    viewModel.onCreateRouteOriginSelected(
+                        suggestion.primaryText,
+                        suggestion.placeId,
+                        selected.latitude,
+                        selected.longitude
+                    )
+                },
+                onSuggestionSelected = { suggestion, onResolved ->
+                    viewModel.onSuggestionSelected(suggestion, onResolved)
+                },
+                onReverseGeocoding = { latitude, longitude ->
+                    viewModel.onOpenCreateRoute(latitude, longitude)
+                },
+                onClear = {
+                    viewModel.clear()
+                }
+            )
+        }
+
+        composable<SearchDirectionStop> {
+            val data = it.toRoute<SearchDirectionStop>()
+            var latitude by remember { mutableStateOf(data.latitude) }
+            var longitude by remember { mutableStateOf(data.longitude) }
+
+            AddressSearchField2(
+                state = placesState.value,
+                latitude = latitude,
+                longitude = longitude,
+                onConfirmAction = { // navegar al formulario
+                    navController.navigate(FormStop)
+                    //viewModel.clear()
+                    //viewModel.onClearPlacesState()
+                    //viewModel.onDismissStopDetail()
+                    //navController.popBackStack()
+                },
+                onBack = {
+                    viewModel.clear()
+                    if (navController.previousBackStackEntry != null)
+                        navController.popBackStack()
+                },
+                onValueChange = { value ->
+                    viewModel.onQueryChanged(value)
+                },
+                onAddressSelected = { suggestion, address ->
+                    latitude = address.latitude
+                    longitude = address.longitude
+                    viewModel.onStopDirectionSelected(
+                        address.formattedAddress,
+                        suggestion.placeId,
+                        address.latitude,
+                        address.longitude
+                    )
+                },
+                onSuggestionSelected = { suggestion, onResolved ->
+                    viewModel.onSuggestionSelected(suggestion, onResolved)
+                },
+                onReverseGeocoding = { latitude, longitude ->
+                    viewModel.onStopReverseGeocoding(latitude, longitude)
+                },
+                onClear = {
+                    viewModel.clear()
+                }
+            )
+        }
+
+        composable<FormStop> {
+            val notices by viewModel.notices.collectAsStateWithLifecycle()
+            StopFormDialog(
+                state = viewModel.stopFormState.collectAsState().value,
+                notices = notices,
+                onRecipientChange = { value ->
+                    viewModel.onStopRecipientChange(value)
+                },
+                onDirectionDetailChange = { value ->
+                    viewModel.onDirectionDetailChange(value)
+                },
+                onNoticeChange = { value ->
+                    viewModel.onStopNoticeChange(value)
+                },
+                onNoteChange = { value ->
+                    viewModel.onStopNoteChange(value)
+                },
+                onConfirm = {
+                    viewModel.onCreateStop()
+                    navController.popBackStack(
+                        route = NotifierHomeRoute,
+                        inclusive = false
+                    )
+                    viewModel.onDismissStopForm()
+                },
+                onConfirmAndOther = {
+                    viewModel.onCreateStop()
+                    navController.popBackStack()
+                    //viewModel.onDismissStopForm()
+                },
+                onDismiss = {
+                    viewModel.onDismissStopForm()
+                },
+                onBack = {
+                    if (navController.previousBackStackEntry != null)
+                        navController.popBackStack()
+                }
+            )
+        }
+
+        composable<StopDetail> {
+            val stopDetailState = viewModel.stopDetailState.collectAsState().value
+            val stopStates by viewModel.stopStates.collectAsStateWithLifecycle()
+            val notices by viewModel.notices.collectAsStateWithLifecycle()
+            StopDetailPanel(
+                state = stopDetailState,
+                stopStates = stopStates,
+                notices = notices,
+                onStateChange = { state ->
+                    stopDetailState.stop?.let { userStop ->
+                        viewModel.onMarkStopState(userStop, state)
+                    }
+                },
+                onNoteChange = { value ->
+                    viewModel.onStopNoteInputChange(value)
+                },
+                onSaveNote = {
+                    viewModel.onSaveStopNote()
+                },
+                onMarkExitosa = { },
+                onMarkFallida = { },
+                onDelete = {
+                    stopDetailState.stop?.id?.let {
+                        viewModel.onDeleteStop(stopId = it)
+                    }
+                    navController.popBackStack()
+                },
+                onDismiss = {
+                    if (navController.previousBackStackEntry != null)
+                        navController.popBackStack()
+                }
+            )
+        }
+
         composable<AuthRoute> {
             AuthScreen(
                 onNavigateAfterLogin = { isSupervisor ->
@@ -174,7 +375,8 @@ fun NavigationWrapper(
             val parentEntry = remember(navController.currentBackStackEntry) {
                 navController.getBackStackEntry(SupervisorHomeRoute)
             }
-            val supervisorViewModel: SupervisorViewModel = koinViewModel(viewModelStoreOwner = parentEntry)
+            val supervisorViewModel: SupervisorViewModel =
+                koinViewModel(viewModelStoreOwner = parentEntry)
             supervisorViewModel.routeSummarySelected?.let {
                 SupervisorRouteDetailScreen(
                     route = it,
@@ -192,14 +394,51 @@ fun NavigationWrapper(
             viewModel.getAllRoutesSummary()
             val stopStates by viewModel.stopStates.collectAsStateWithLifecycle()
             val notices by viewModel.notices.collectAsStateWithLifecycle()
-            RoutePlannerScreen(
+            MainScreen(
+                userRoute = routeState.value,
+                allRoutes = allRoutes.value,
+                routePolyline = routePolyline,
+                createRouteFormState = createRouteFormState,
+                onCreateRoute = { latitude, longitude ->
+                    navController.navigate(NewRoute(latitude, longitude))
+                },
+                onChangeRoute = { routeId ->
+                    viewModel.selectRoute(routeId)
+                },
+                onFinalizeRoute = { viewModel.onFinalizeRoute() },
+                onUpdateRouteName = { id, name ->
+                    viewModel.updateRouteName(id, name)
+                },
+                onDeleteRoute = { routeId ->
+                    viewModel.deleteRoute(routeId)
+                },
+                onLocationCaptured = { latitude, longitude ->
+                    viewModel.onLocationCaptured(latitude, longitude)
+                },
+                stopStates = stopStates,
+                onStopClick = { stop ->
+                    //viewModel.onStopClick(stop)
+                },
+                onStopDetailScreen = { stop ->
+                    viewModel.onStopClick(stop)
+                    navController.navigate(StopDetail)
+                },
+                onSearchStop = {
+                    viewModel.onSearchStopClick()
+                    navController.navigate(SearchDirectionStop())
+                },
+                onOptimizeRoute = {
+                    viewModel.optimizeRoute()
+                },
+                isOptimizing = createRouteFormState.isOptimizing,
+            )
+            /*RoutePlannerScreen(
                 userRoute = routeState.value,
                 allRoutes = allRoutes.value,
                 routePolyline = routePolyline,
                 stopStates = stopStates,
                 notices = notices,
                 onCreateRoute = { latitude, longitude ->
-                    println("pepe es bueno")
                     navController.navigate(NewRoute(latitude, longitude))
                 },
                 createRouteFormState = createRouteFormState,
@@ -256,12 +495,16 @@ fun NavigationWrapper(
                 },
                 onSearchStopClick = {
                     viewModel.onSearchStopClick()
+                    navController.navigate(SearchDirectionStop())
                 },
                 onDismissStopDetail = {
                     viewModel.onDismissStopDetail()
                 },
                 onStopNoteInputChange = { value ->
                     viewModel.onStopNoteInputChange(value)
+                },
+                onStopReverseGeocoding = { latitude, longitude ->
+                    viewModel.onStopReverseGeocoding(latitude, longitude)
                 },
                 onSaveStopNote = {
                     viewModel.onSaveStopNote()
@@ -283,7 +526,7 @@ fun NavigationWrapper(
                 onClearPlacesState = {
                     viewModel.onClearPlacesState()
                 }
-            )
+            )*/
         }
     }
 }

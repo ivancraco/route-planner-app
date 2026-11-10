@@ -1,5 +1,6 @@
 package com.routeplanner.app.features.home.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -47,10 +49,12 @@ fun StopDetailPanel(
     onSaveNote: () -> Unit,
     onMarkExitosa: () -> Unit,
     onMarkFallida: () -> Unit,
-    onDelete: () -> Unit,
+    onDelete: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val stop = state.stop ?: return
+    var showConfirmDeleteStop by remember { mutableStateOf(false) }
+    var stopToDeleteId by remember { mutableStateOf<String?>(null) }
 
     val currentState = stopStates.find { it.id == stop.stateId }
         ?: StopState(10, "No Notificado")
@@ -63,13 +67,15 @@ fun StopDetailPanel(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(RoutePlannerTheme.colors.primary)
+            .statusBarsPadding()
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onDismiss) {
                 Icon(
@@ -79,14 +85,17 @@ fun StopDetailPanel(
                 )
             }
             Text(
-                text = shortAddress,
+                text = "Detalles de entrega",
                 style = RoutePlannerTheme.typography.titleMedium,
                 color = RoutePlannerTheme.colors.onPrimary,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            IconButton(onClick = onDelete) {
+            IconButton(onClick = {
+                showConfirmDeleteStop = true
+                stopToDeleteId = state.stop.id
+            }) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Eliminar",
@@ -95,7 +104,7 @@ fun StopDetailPanel(
             }
         }
 
-        HorizontalDivider(color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.1f))
+        //HorizontalDivider(color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.1f))
 
         // Info
         //StopInfoRow(label = "Destinatario", value = stop.recipient)
@@ -111,17 +120,18 @@ fun StopDetailPanel(
                     .padding(
                         all = RoutePlannerTheme.dimens.spaceMd
                     ),
-                verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceXs)
+                verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceXs),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = stop.recipient,
-                    style = RoutePlannerTheme.typography.titleLarge,
+                    text = shortAddress,
+                    style = RoutePlannerTheme.typography.headlineSmall,
                     color = RoutePlannerTheme.colors.onPrimary
                 )
                 Text(
-                    text = "${notices.find { it.id == stop.noticeId }?.description}",
-                    style = RoutePlannerTheme.typography.bodySmall,
-                    color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f)
+                    text = "${stop.recipient} · ${notices.find { it.id == stop.noticeId }?.description}",
+                    style = RoutePlannerTheme.typography.titleSmall,
+                    color = RoutePlannerTheme.colors.onPrimary
                 )
             }
         }
@@ -191,6 +201,19 @@ fun StopDetailPanel(
                 }
             }
         }*/
+        if (showConfirmDeleteStop) {
+            ConfirmDeleteDialog(
+                text = "¿Eliminar entrega?",
+                onDismiss = { showConfirmDeleteStop = false },
+                onDelete = {
+                    showConfirmDeleteStop = false
+                    stopToDeleteId?.let {
+                        onDelete(it)
+                        stopToDeleteId = null
+                    }
+                }
+            )
+        }
     }
 }
 

@@ -1,6 +1,5 @@
 package com.routeplanner.app.features.auth.presentation
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -9,29 +8,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -42,14 +37,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeplanner.app.core.ui.RoutePlannerTheme
+import com.routeplanner.app.features.home.presentation.stopFieldColors
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 import route_planner_app.shared.generated.resources.Res
 import route_planner_app.shared.generated.resources.app_icon
-
-private val PinRed = Color(0xFFF15A4A)
-private val LoginBlue = Color(0xFF5B8DF6)
-private val FieldGray = Color(0xFFEAEAEA)
 
 @Composable
 fun AuthScreen(
@@ -74,6 +66,7 @@ private fun AuthContent(
     state: AuthUiState,
     onEvent: (AuthEvent) -> Unit
 ) {
+    val palette = com.routeplanner.app.core.ui.rememberPalette()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(state.errorMessage) {
@@ -84,13 +77,23 @@ private fun AuthContent(
     }
 
     Scaffold(
-        containerColor = RoutePlannerTheme.colors.primary,
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        containerColor = palette.background,
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                // Snackbar invertido: contraste alto y sin color decorativo
+                Snackbar(
+                    snackbarData = data,
+                    shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd),
+                    containerColor = palette.textPrimary,
+                    contentColor = palette.background,
+                )
+            }
+        }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(RoutePlannerTheme.colors.primary)
+                .background(palette.background)
                 .padding(padding)
                 .padding(
                     horizontal = RoutePlannerTheme.dimens.contentPaddingHorizontal
@@ -111,7 +114,7 @@ private fun AuthContent(
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 fontStyle = FontStyle.Italic,
-                color = RoutePlannerTheme.colors.onPrimary
+                color = palette.textPrimary
             )
 
             Spacer(Modifier.height(56.dp))
@@ -136,21 +139,24 @@ private fun AuthContent(
             Button(
                 onClick = { onEvent(AuthEvent.LoginClicked) },
                 enabled = state.isLoginEnabled,
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = LoginBlue,
-                    disabledContainerColor = LoginBlue.copy(alpha = 0.5f)
+                    containerColor = palette.accent,
+                    contentColor = palette.onAccent,
+                    disabledContainerColor = palette.border,
+                    disabledContentColor = palette.textSecondary.copy(alpha = 0.5f)
                 ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                 modifier = Modifier.height(48.dp).fillMaxWidth()
             ) {
                 if (state.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
-                        color = RoutePlannerTheme.colors.secondary,
+                        color = palette.onAccent,
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Iniciar sesión", color = RoutePlannerTheme.colors.onSecondary, fontWeight = FontWeight.Medium)
+                    Text("Iniciar sesión", fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -164,16 +170,14 @@ private fun AuthTextField(
     placeholder: String,
     isPassword: Boolean = false
 ) {
-    TextField(
+    val palette = com.routeplanner.app.core.ui.rememberPalette()
+    OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text(
-            text = placeholder,
-            color = Color.Gray
-        ) },
+        placeholder = { Text(text = placeholder) },
         singleLine = true,
         textStyle = TextStyle(
-            color = RoutePlannerTheme.colors.onPrimary,
+            color = palette.textPrimary,
             fontSize = RoutePlannerTheme.typography.bodyMedium.fontSize,
             fontWeight = RoutePlannerTheme.typography.bodyMedium.fontWeight
         ),
@@ -182,18 +186,7 @@ private fun AuthTextField(
             keyboardType = if (isPassword) KeyboardType.Password else KeyboardType.Text
         ),
         shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd),
-        colors = TextFieldDefaults.colors(
-            focusedTextColor = RoutePlannerTheme.colors.onPrimary,
-            unfocusedTextColor = RoutePlannerTheme.colors.onPrimary,
-            disabledTextColor = RoutePlannerTheme.colors.onPrimary,
-            focusedContainerColor = RoutePlannerTheme.colors.primaryContainer,
-            unfocusedContainerColor = RoutePlannerTheme.colors.primaryContainer,
-            disabledContainerColor = RoutePlannerTheme.colors.primaryContainer,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
-            disabledIndicatorColor = Color.Transparent,
-            cursorColor = RoutePlannerTheme.colors.onPrimary
-        ),
+        colors = stopFieldColors(),
         modifier = Modifier.fillMaxWidth()
     )
 }

@@ -61,8 +61,9 @@ class SupervisorViewModel(
     }
 
     fun refresh() {
-        _paginator.reset()
-        loadNextPage()
+        viewModelScope.launch(Dispatchers.IO) {
+            _paginator.refresh()
+        }
     }
 
     fun setUsername(query: String?) {

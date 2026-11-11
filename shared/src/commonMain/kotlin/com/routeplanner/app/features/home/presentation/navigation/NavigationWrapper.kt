@@ -364,6 +364,9 @@ fun NavigationWrapper(
                     }
                 },
                 onRetry = { supervisorViewModel.loadNextPage() },
+                onRefresh = {
+                    supervisorViewModel.refresh()
+                },
                 onRouteSelected = { routeSelected ->
                     supervisorViewModel.setRouteSummary(routeSelected)
                     navController.navigate(SupervisorDetailRoute)

@@ -10,16 +10,6 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 
-/**
- * Ajustá la ruta "auth/login" a la real de tu backend.
- * Se asume que el HttpClient inyectado ya tiene configurado:
- *  - baseUrl (o url completa acá)
- *  - ContentNegotiation con kotlinx.serialization
- *  - expectSuccess = true (para que Ktor lance ClientRequestException /
- *    ServerResponseException en respuestas 4xx/5xx en vez de devolverlas
- *    "silenciosamente"). Si tu NetworkModule usa expectSuccess = false,
- *    avisame y adapto el manejo en AuthRepositoryImpl.
- */
 class AuthApi(
     private val httpClient: HttpClient
 ) {

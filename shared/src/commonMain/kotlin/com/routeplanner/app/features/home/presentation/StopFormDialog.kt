@@ -1,7 +1,9 @@
 package com.routeplanner.app.features.home.presentation
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,34 +12,33 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldColors
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,12 +46,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.routeplanner.app.core.ui.RoutePlannerTheme
+import com.routeplanner.app.core.ui.rememberPalette
 import com.routeplanner.app.features.home.domain.model.Notices
-import com.routeplanner.app.features.home.domain.model.StopNoticeEnum
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,15 +67,25 @@ fun StopFormDialog(
     onDismiss: () -> Unit,
     onBack: () -> Unit
 ) {
+    val palette = rememberPalette()
+    val shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd)
+    val canSave = state.recipient.isNotBlank() && !state.isLoading && state.notice != null
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = palette.background,
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = palette.background,
+                    scrolledContainerColor = palette.background,
+                ),
                 title = {
                     Text(
                         text = "Datos de entrega",
                         style = RoutePlannerTheme.typography.titleLarge,
-                        color = RoutePlannerTheme.colors.onPrimary
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.textPrimary
                     )
                 },
                 navigationIcon = {
@@ -84,7 +95,8 @@ fun StopFormDialog(
                         Icon(
                             Icons.Default.ArrowBackIosNew,
                             "Volver",
-                            tint = RoutePlannerTheme.colors.onPrimary
+                            tint = palette.textPrimary,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -95,7 +107,7 @@ fun StopFormDialog(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .background(RoutePlannerTheme.colors.primary)
+                .background(palette.background)
                 .padding(all = RoutePlannerTheme.dimens.spaceMd),
             verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceLg)
         ) {
@@ -103,8 +115,13 @@ fun StopFormDialog(
                 .firstOrNull()
                 ?.trim() ?: state.direction
 
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth()
+            // Ubicación confirmada
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = shape,
+                colors = CardDefaults.cardColors(containerColor = palette.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                border = BorderStroke(1.dp, palette.border),
             ) {
                 Row(
                     modifier = Modifier
@@ -113,104 +130,94 @@ fun StopFormDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceMd)
                 ) {
-                    Icon(
-                        Icons.Default.LocationOn,
-                        "",
-                        tint = RoutePlannerTheme.colors.secondary
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(palette.accentSoft),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.LocationOn,
+                            "",
+                            tint = palette.accent,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                     Column {
                         Text(
                             text = shortAddress,
                             style = RoutePlannerTheme.typography.titleMedium,
-                            color = RoutePlannerTheme.colors.onPrimary
+                            fontWeight = FontWeight.SemiBold,
+                            color = palette.textPrimary
                         )
                         Text(
                             text = "Ubicación confirmada",
                             style = RoutePlannerTheme.typography.bodySmall,
-                            color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.6f)
+                            color = palette.textSecondary
                         )
                     }
                 }
             }
 
+            // Destinatario
             Column(
                 verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
             ) {
-                Text(
-                    text = "Destinatario",
-                    style = RoutePlannerTheme.typography.titleMedium
-                )
-                // Destinatario
-                TextField(
+                FieldLabel("Destinatario")
+                OutlinedTextField(
                     value = state.recipient,
                     onValueChange = onRecipientChange,
                     singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = RoutePlannerTheme.colors.secondary,
-                        unfocusedIndicatorColor = RoutePlannerTheme.colors.primaryContainer,
-                        focusedContainerColor = RoutePlannerTheme.colors.primaryContainer,
-                        unfocusedContainerColor = RoutePlannerTheme.colors.primaryContainer,
-                        cursorColor = RoutePlannerTheme.colors.onPrimary
-                    ),
-                    shape = RoundedCornerShape(RoutePlannerTheme.dimens.spaceSm),
+                    colors = stopFieldColors(),
+                    shape = shape,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
+            // Piso / Depto
             Column(
                 verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
             ) {
-                Text(
-                    text = "Piso / Depto",
-                    style = RoutePlannerTheme.typography.titleMedium
-                )
-                TextField(
+                FieldLabel("Piso / Depto")
+                OutlinedTextField(
                     value = state.directionDetail,
                     onValueChange = { value ->
                         if (value.trim().length <= 30)
                             onDirectionDetailChange(value)
                     },
                     singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = RoutePlannerTheme.colors.secondary,
-                        unfocusedIndicatorColor = RoutePlannerTheme.colors.primaryContainer,
-                        focusedContainerColor = RoutePlannerTheme.colors.primaryContainer,
-                        unfocusedContainerColor = RoutePlannerTheme.colors.primaryContainer,
-                        cursorColor = RoutePlannerTheme.colors.onPrimary
-                    ),
-                    shape = RoundedCornerShape(RoutePlannerTheme.dimens.spaceSm),
+                    colors = stopFieldColors(),
+                    shape = shape,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
             // Carácter
-            StopNoticeDropdown(
-                notices = notices,
-                selected = state.notice,
-                onSelected = onNoticeChange
-            )
-
             Column(
                 verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
             ) {
-                Text(
-                    text = "Referencia (opcional)",
-                    style = RoutePlannerTheme.typography.titleMedium
+                FieldLabel("Carácter")
+                StopNoticeDropdown(
+                    notices = notices,
+                    selected = state.notice,
+                    onSelected = onNoticeChange
                 )
-                TextField(
+            }
+
+            // Referencia
+            Column(
+                verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
+            ) {
+                FieldLabel("Referencia (opcional)")
+                OutlinedTextField(
                     value = state.note,
                     onValueChange = onNoteChange,
                     //singleLine = true,
                     minLines = 2,
                     maxLines = 2,
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = RoutePlannerTheme.colors.secondary,
-                        unfocusedIndicatorColor = RoutePlannerTheme.colors.primaryContainer,
-                        focusedContainerColor = RoutePlannerTheme.colors.primaryContainer,
-                        unfocusedContainerColor = RoutePlannerTheme.colors.primaryContainer,
-                        cursorColor = RoutePlannerTheme.colors.onPrimary
-                    ),
-                    shape = RoundedCornerShape(RoutePlannerTheme.dimens.spaceSm),
+                    colors = stopFieldColors(),
+                    shape = shape,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -232,45 +239,71 @@ fun StopFormDialog(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceMd)
             ) {
-                Button(
+                // Secundaria
+                OutlinedButton(
                     onClick = onConfirmAndOther,
-                    enabled = state.recipient.isNotBlank() && !state.isLoading && state.notice != null,
+                    enabled = canSave,
                     modifier = Modifier
-                        .weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.onPrimary
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = shape,
+                    border = BorderStroke(
+                        1.dp,
+                        if (canSave) palette.accent else palette.border
+                    ),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = palette.accent,
+                        disabledContentColor = palette.textSecondary.copy(alpha = 0.5f),
                     )
                 ) {
                     Text(
                         text = "Guardar y otra",
-                        color = MaterialTheme.colorScheme.primary
+                        fontWeight = FontWeight.Medium,
                     )
                 }
+                // Principal
                 Button(
                     onClick = onConfirm,
-                    enabled = state.recipient.isNotBlank() && !state.isLoading && state.notice != null,
+                    enabled = canSave,
                     modifier = Modifier
-                        .weight(1f),
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = shape,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
-                    )
+                        containerColor = palette.accent,
+                        contentColor = palette.onAccent,
+                        disabledContainerColor = palette.border,
+                        disabledContentColor = palette.textSecondary.copy(alpha = 0.5f),
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
                 ) {
                     if (state.isLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = palette.onAccent
                         )
                     } else {
                         Text(
                             text = "Guardar",
-                            color = MaterialTheme.colorScheme.onSecondary
+                            fontWeight = FontWeight.Medium,
                         )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun FieldLabel(text: String) {
+    val palette = rememberPalette()
+    Text(
+        text = text,
+        style = RoutePlannerTheme.typography.titleMedium,
+        fontWeight = FontWeight.Medium,
+        color = palette.textSecondary
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -280,17 +313,19 @@ private fun StopNoticeDropdown(
     selected: Notices?,
     onSelected: (Notices) -> Unit
 ) {
+    val palette = rememberPalette()
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it }
     ) {
         OutlinedTextField(
-            value = selected?.description ?: "Seleccionar Carácter",
+            value = selected?.description ?: "",
             onValueChange = {},
             readOnly = true,
-            label = { Text("Carácter") },
+            placeholder = { Text("Seleccionar carácter") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd),
             colors = stopFieldColors(),
             modifier = Modifier
                 .fillMaxWidth()
@@ -299,13 +334,36 @@ private fun StopNoticeDropdown(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
+            containerColor = palette.surface,
+            border = BorderStroke(1.dp, palette.border),
+            shadowElevation = 0.dp,
+            tonalElevation = 0.dp,
         ) {
             notices.forEach { notice ->
+                val isSelected = selected?.id == notice.id
                 DropdownMenuItem(
-                    text = { Text(notice.description) },
+                    text = {
+                        Text(
+                            text = notice.description,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        )
+                    },
+                    colors = MenuDefaults.itemColors(
+                        textColor = if (isSelected) palette.accent else palette.textPrimary,
+                    ),
                     onClick = {
                         onSelected(notice)
                         expanded = false
+                    },
+                    leadingIcon = {
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = palette.accent,
+                                modifier = Modifier.size(RoutePlannerTheme.dimens.iconSizeSm)
+                            )
+                        }
                     }
                 )
             }
@@ -313,13 +371,28 @@ private fun StopNoticeDropdown(
     }
 }
 
+// Campos de texto: superficie, borde fino y acento al enfocar.
+// Mantiene la misma firma pública, así que otras pantallas que la usen se actualizan solas.
 @Composable
-fun stopFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedTextColor = RoutePlannerTheme.colors.onPrimary,
-    unfocusedTextColor = RoutePlannerTheme.colors.onPrimary,
-    focusedLabelColor = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.7f),
-    unfocusedLabelColor = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f),
-    focusedBorderColor = RoutePlannerTheme.colors.secondary,
-    unfocusedBorderColor = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.3f),
-    cursorColor = RoutePlannerTheme.colors.onPrimary,
-)
+fun stopFieldColors() : androidx.compose.material3.TextFieldColors {
+    val palette = rememberPalette()
+    return OutlinedTextFieldDefaults.colors(
+        focusedTextColor = palette.textPrimary,
+        unfocusedTextColor = palette.textPrimary,
+        focusedContainerColor = palette.surface,
+        unfocusedContainerColor = palette.surface,
+        focusedBorderColor = palette.accent,
+        unfocusedBorderColor = palette.border,
+        focusedLabelColor = palette.accent,
+        unfocusedLabelColor = palette.textSecondary,
+        focusedPlaceholderColor = palette.textSecondary,
+        unfocusedPlaceholderColor = palette.textSecondary,
+        focusedTrailingIconColor = palette.textSecondary,
+        unfocusedTrailingIconColor = palette.textSecondary,
+        cursorColor = palette.accent,
+        selectionColors = TextSelectionColors(
+            handleColor = palette.accent,
+            backgroundColor = palette.accent.copy(alpha = 0.25f)
+        ),
+    )
+}

@@ -1,5 +1,6 @@
 package com.routeplanner.app.features.home.presentation
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,12 +11,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -24,8 +27,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,9 +39,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.routeplanner.app.core.ui.RoutePlannerTheme
+import com.routeplanner.app.core.ui.UiPalette
+import com.routeplanner.app.core.ui.rememberPalette
 import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.StopState
 
@@ -53,6 +63,9 @@ fun StopDetailPanel(
     onDismiss: () -> Unit,
 ) {
     val stop = state.stop ?: return
+    val palette = rememberPalette()
+    val fieldShape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd)
+
     var showConfirmDeleteStop by remember { mutableStateOf(false) }
     var stopToDeleteId by remember { mutableStateOf<String?>(null) }
 
@@ -67,7 +80,7 @@ fun StopDetailPanel(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(RoutePlannerTheme.colors.primary)
+            .background(palette.background)
             .statusBarsPadding()
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -81,13 +94,14 @@ fun StopDetailPanel(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Volver",
-                    tint = RoutePlannerTheme.colors.onPrimary
+                    tint = palette.textPrimary
                 )
             }
             Text(
                 text = "Detalles de entrega",
                 style = RoutePlannerTheme.typography.titleMedium,
-                color = RoutePlannerTheme.colors.onPrimary,
+                fontWeight = FontWeight.SemiBold,
+                color = palette.textPrimary,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -99,7 +113,7 @@ fun StopDetailPanel(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Eliminar",
-                    tint = MaterialTheme.colorScheme.error
+                    tint = palette.danger
                 )
             }
         }
@@ -111,8 +125,12 @@ fun StopDetailPanel(
         //StopInfoRow(label = "Carácter", value = notices.find { it.id == stop.noticeId }?.description
         //   ?: "")
         //StopInfoRow(label = "Estado", value = currentState.description)
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = fieldShape,
+            colors = CardDefaults.cardColors(containerColor = palette.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            border = BorderStroke(1.dp, palette.border),
         ) {
             Column(
                 modifier = Modifier
@@ -126,12 +144,14 @@ fun StopDetailPanel(
                 Text(
                     text = shortAddress,
                     style = RoutePlannerTheme.typography.headlineSmall,
-                    color = RoutePlannerTheme.colors.onPrimary
+                    fontWeight = FontWeight.SemiBold,
+                    color = palette.textPrimary
                 )
                 Text(
                     text = "${stop.recipient} · ${notices.find { it.id == stop.noticeId }?.description}",
                     style = RoutePlannerTheme.typography.titleSmall,
-                    color = RoutePlannerTheme.colors.onPrimary
+                    fontWeight = FontWeight.Normal,
+                    color = palette.textSecondary
                 )
             }
         }
@@ -139,6 +159,7 @@ fun StopDetailPanel(
         StopStateDropdown(
             current = currentState,
             states = stopStates,
+            palette = palette,
             onSelected = { state ->
                 onStateChange(state)
                 onDismiss()
@@ -152,14 +173,15 @@ fun StopDetailPanel(
             label = { Text("Nota") },
             minLines = 3,
             maxLines = 3,
-            colors = stopFieldColors(),
+            shape = fieldShape,
+            colors = stopFieldColors(palette),
             trailingIcon = {
                 if (state.noteInput != (stop.note ?: "")) {
                     IconButton(onClick = onSaveNote) {
                         Icon(
                             Icons.Default.Check,
                             contentDescription = "Guardar",
-                            tint = RoutePlannerTheme.colors.secondary
+                            tint = palette.accent
                         )
                     }
                 }
@@ -219,25 +241,48 @@ fun StopDetailPanel(
 
 @Composable
 private fun StopInfoRow(label: String, value: String) {
+    val palette = rememberPalette()
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
-            color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f)
+            color = palette.textSecondary
         )
         Text(
             text = value,
             style = RoutePlannerTheme.typography.bodyMedium,
-            color = RoutePlannerTheme.colors.onPrimary
+            color = palette.textPrimary
         )
     }
 }
+
+// Campos de texto: contenedor de superficie, borde fino y acento al enfocar.
+@Composable
+private fun stopFieldColors(palette: UiPalette): TextFieldColors =
+    OutlinedTextFieldDefaults.colors(
+        focusedTextColor = palette.textPrimary,
+        unfocusedTextColor = palette.textPrimary,
+        focusedContainerColor = palette.surface,
+        unfocusedContainerColor = palette.surface,
+        focusedBorderColor = palette.accent,
+        unfocusedBorderColor = palette.border,
+        focusedLabelColor = palette.accent,
+        unfocusedLabelColor = palette.textSecondary,
+        focusedTrailingIconColor = palette.textSecondary,
+        unfocusedTrailingIconColor = palette.textSecondary,
+        cursorColor = palette.accent,
+        selectionColors = androidx.compose.foundation.text.selection.TextSelectionColors(
+            handleColor = palette.accent,
+            backgroundColor = palette.accent.copy(alpha = 0.25f)
+        ),
+    )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StopStateDropdown(
     current: StopState,
     states: List<StopState>,
+    palette: UiPalette,
     onSelected: (StopState) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -252,7 +297,8 @@ private fun StopStateDropdown(
             readOnly = true,
             label = { Text("Estado") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            colors = stopFieldColors(),
+            shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd),
+            colors = stopFieldColors(palette),
             modifier = Modifier
                 .fillMaxWidth()
                 .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryEditable)
@@ -260,20 +306,33 @@ private fun StopStateDropdown(
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
+            containerColor = palette.surface,
+            border = BorderStroke(1.dp, palette.border),
+            shadowElevation = 0.dp,
+            tonalElevation = 0.dp,
         ) {
             states.forEach { state ->
+                val selected = state.id == current.id
                 DropdownMenuItem(
-                    text = { Text(state.description) },
+                    text = {
+                        Text(
+                            text = state.description,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                        )
+                    },
+                    colors = MenuDefaults.itemColors(
+                        textColor = if (selected) palette.accent else palette.textPrimary,
+                    ),
                     onClick = {
                         onSelected(state)
                         expanded = false
                     },
                     leadingIcon = {
-                        if (state.id == current.id) {
+                        if (selected) {
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = null,
-                                tint = RoutePlannerTheme.colors.secondary,
+                                tint = palette.accent,
                                 modifier = Modifier.size(RoutePlannerTheme.dimens.iconSizeSm)
                             )
                         }

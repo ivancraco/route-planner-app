@@ -42,6 +42,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -252,11 +253,24 @@ fun MainScreen(
                     ) {
                         Text(
                             text = "Mis rutas",
-                            style = RoutePlannerTheme.typography.titleMedium,
+                            style = RoutePlannerTheme.typography.titleLarge,
                             color = RoutePlannerTheme.colors.onPrimary,
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Start,
                         )
+
+                        if (allRoutes.isEmpty()) {
+                            Text(
+                                text = "No se encontraron resultados",
+                                style = RoutePlannerTheme.typography.bodyMedium,
+                                color = RoutePlannerTheme.colors.onPrimary,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = RoutePlannerTheme.dimens.spaceMd),
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+
                         LazyColumn(
                             modifier = Modifier.weight(1f),
                         ) {
@@ -282,12 +296,12 @@ fun MainScreen(
                                     ) {
                                         Text(
                                             text = route.name,
-                                            style = RoutePlannerTheme.typography.bodyMedium,
+                                            style = RoutePlannerTheme.typography.titleMedium,
                                             color = RoutePlannerTheme.colors.onPrimary
                                         )
                                         Text(
                                             text = route.createdAt.toArgentinaDateString(),
-                                            style = RoutePlannerTheme.typography.labelSmall,
+                                            style = RoutePlannerTheme.typography.labelMedium,
                                             color = RoutePlannerTheme.colors.onPrimary.copy(
                                                 alpha = 0.5f
                                             )
@@ -305,14 +319,24 @@ fun MainScreen(
                             },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondary,
-                                contentColor = MaterialTheme.colorScheme.onSecondary,
+                                containerColor = RoutePlannerTheme.colors.secondary,
+                                contentColor = RoutePlannerTheme.colors.onSecondary,
                             ),
                         ) {
-                            Text(
-                                text = "Nueva ruta",
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceXs)
+                            ) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    "",
+                                    tint = RoutePlannerTheme.colors.onSecondary
+                                )
+                                Text(
+                                    text = "Nueva ruta",
+                                    style = RoutePlannerTheme.typography.titleMedium,
+                                )
+                            }
                         }
                     }
                 }

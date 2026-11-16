@@ -3,8 +3,10 @@ package com.routeplanner.app.features.home.data.local.dao
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
+import app.cash.sqldelight.coroutines.mapToOne
 import app.cash.sqldelight.coroutines.mapToOneOrNull
 import com.routeplanner.app.core.common.data.database.DbHelper
+import com.routeplanner.app.core.paging.PagedResult
 import com.routeplanner.app.core.utils.SyncEntity
 import com.routeplanner.app.features.home.data.local.mapper.toUserRoute
 import com.routeplanner.app.features.home.data.local.mapper.toUserRouteSummary
@@ -148,12 +150,49 @@ class RouteDao(
         }
     }
 
-    suspend fun observeRouteSummaries(userId: Int): Flow<List<NotifierRouteSummary>> =
+    suspend fun observeRouteSummaries(
+        userId: Int,
+        page: Int = 1,
+        pageSize: Int = 20
+    ): Flow<PagedResult<NotifierRouteSummary>> =
         dbHelper.withDatabase { db ->
-            db.routeQueries.selectRouteSummaries(1L)
+            val offset = (page - 1) * pageSize
+
+            combine(
+                db.routeQueries.selectRouteSummaries(
+                    userId = 1L,
+                    limit = pageSize.toLong(),
+                    offset = offset.toLong()
+                )
+                    .asFlow()
+                    .mapToList(Dispatchers.Default),
+                db.routeQueries
+                    .countRouteSummaries(userId.toLong())
+                    .asFlow()
+                    .mapToOne(Dispatchers.Default)
+            ) { routes, totalItems ->
+                val totalPages = if (totalItems == 0L) {
+                    0
+                } else {
+                    ((totalItems + pageSize - 1) / pageSize).toInt()
+                }
+
+                PagedResult(
+                    items = routes.map { it.toUserRouteSummary() },
+                    page = page,
+                    pageSize = pageSize,
+                    totalItems = totalItems,
+                    totalPages = totalPages
+                )
+            }
+            /*db.routeQueries.selectRouteSummaries(
+                userId = 1L,
+                limit = pageSize.toLong(),
+                offset = offset.toLong()
+            )
                 .asFlow()
                 .mapToList(Dispatchers.Default)
-                .map { it.map { route -> route.toUserRouteSummary() } }
+                .map { it.map { route -> route.toUserRouteSummary() } }*/
         }
 
     suspend fun selectByUserId(

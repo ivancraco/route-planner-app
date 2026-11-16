@@ -15,14 +15,16 @@ import androidx.navigation.toRoute
 import com.routeplanner.app.core.utils.SyncManager
 import com.routeplanner.app.features.auth.presentation.AuthScreen
 import com.routeplanner.app.features.auth.presentation.navigation.AuthRoute
+import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.presentation.AddressSearchField2
 import com.routeplanner.app.features.home.presentation.NotifierHomeRoute
 import com.routeplanner.app.features.home.presentation.SupervisorHomeRoute
 import com.routeplanner.app.features.home.presentation.CreateRouteScreen
+import com.routeplanner.app.features.home.presentation.HomeScreen
 import com.routeplanner.app.features.home.presentation.MainScreen
 import com.routeplanner.app.features.home.presentation.NotifierViewModel
-import com.routeplanner.app.features.home.presentation.StopDetailPanel
-import com.routeplanner.app.features.home.presentation.StopFormDialog
+import com.routeplanner.app.features.home.presentation.StopDetailScreen
+import com.routeplanner.app.features.home.presentation.CreateStopScreen
 import com.routeplanner.app.features.home.presentation.SupervisorDetailRoute
 import com.routeplanner.app.features.home.presentation.SupervisorHomeScreen
 import com.routeplanner.app.features.home.presentation.SupervisorRouteDetailScreen
@@ -35,10 +37,7 @@ import org.koin.compose.viewmodel.koinViewModel
 object Home
 
 @Serializable
-data class NewRoute(
-    val latitude: Double?,
-    val longitude: Double?
-)
+object NewRoute
 
 @Serializable
 data class FindDirections(val addressType: String)
@@ -61,6 +60,9 @@ object FormStop
 @Serializable
 object StopDetail
 
+@Serializable
+object MainScreen
+
 @Composable
 fun NavigationWrapper(
     viewModel: NotifierViewModel = koinViewModel(),
@@ -74,7 +76,7 @@ fun NavigationWrapper(
     val createRouteFormState by viewModel.createRouteFormState.collectAsStateWithLifecycle()
     val routePolyline by viewModel.routePolyline.collectAsStateWithLifecycle()
 
-    NavHost(navController = navController, startDestination = NotifierHomeRoute) {
+    NavHost(navController = navController, startDestination = MainScreen) {
         composable<Home> {
             /*RoutePlannerScreen(
                 route = routeState.value,
@@ -96,18 +98,20 @@ fun NavigationWrapper(
         composable<NewRoute> {
             val coordinates by viewModel.coordinates.collectAsStateWithLifecycle()
             LaunchedEffect(coordinates) {
-                if (coordinates != null && !createRouteFormState.isOriginResolved) {
+                /*if (coordinates != null && !createRouteFormState.isOriginResolved) {
                     viewModel.onOpenCreateRoute(
                         currentLatitude = coordinates!!.latitude,
                         currentLongitude = coordinates!!.longitude
                     )
-                }
+                }*/
             }
             CreateRouteScreen(
                 placesState = placesState.value,
-                onDismiss = {
-                    if (navController.previousBackStackEntry != null)
+                onBack = {
+                    if (navController.previousBackStackEntry != null) {
                         navController.popBackStack()
+                        viewModel.onClearRouteFormState()
+                    }
                 },
                 /*onRequestLocationPermission = {},
                 onPickAddress = {},
@@ -222,7 +226,7 @@ fun NavigationWrapper(
                 longitude = longitude,
                 onConfirmAction = { // navegar al formulario
                     navController.navigate(FormStop)
-                    //viewModel.clear()
+                    viewModel.clear()
                     //viewModel.onClearPlacesState()
                     //viewModel.onDismissStopDetail()
                     //navController.popBackStack()
@@ -259,7 +263,7 @@ fun NavigationWrapper(
 
         composable<FormStop> {
             val notices by viewModel.notices.collectAsStateWithLifecycle()
-            StopFormDialog(
+            CreateStopScreen(
                 state = viewModel.stopFormState.collectAsState().value,
                 notices = notices,
                 onRecipientChange = { value ->
@@ -280,19 +284,18 @@ fun NavigationWrapper(
                         route = NotifierHomeRoute,
                         inclusive = false
                     )
-                    viewModel.onDismissStopForm()
+                    viewModel.onClearStopFormState()
                 },
                 onConfirmAndOther = {
-                    viewModel.onCreateStop()
                     navController.popBackStack()
-                    //viewModel.onDismissStopForm()
-                },
-                onDismiss = {
-                    viewModel.onDismissStopForm()
+                    viewModel.onCreateStop()
+                    viewModel.onClearStopFormState()
                 },
                 onBack = {
-                    if (navController.previousBackStackEntry != null)
+                    if (navController.previousBackStackEntry != null){
                         navController.popBackStack()
+                        viewModel.onClearStopFormState()
+                    }
                 }
             )
         }
@@ -301,7 +304,7 @@ fun NavigationWrapper(
             val stopDetailState = viewModel.stopDetailState.collectAsState().value
             val stopStates by viewModel.stopStates.collectAsStateWithLifecycle()
             val notices by viewModel.notices.collectAsStateWithLifecycle()
-            StopDetailPanel(
+            StopDetailScreen(
                 state = stopDetailState,
                 stopStates = stopStates,
                 notices = notices,
@@ -324,7 +327,7 @@ fun NavigationWrapper(
                     }
                     navController.popBackStack()
                 },
-                onDismiss = {
+                onBack = {
                     if (navController.previousBackStackEntry != null)
                         navController.popBackStack()
                 }
@@ -334,7 +337,7 @@ fun NavigationWrapper(
         composable<AuthRoute> {
             AuthScreen(
                 onNavigateAfterLogin = { isSupervisor ->
-                    val destination = if (isSupervisor) SupervisorHomeRoute else NotifierHomeRoute
+                    val destination = if (isSupervisor) SupervisorHomeRoute else MainScreen
                     navController.navigate(destination) {
                         popUpTo<AuthRoute> { inclusive = true }
                     }
@@ -392,18 +395,43 @@ fun NavigationWrapper(
             }
         }
 
+        composable<MainScreen> {
+            val paginatorState by viewModel.paginatorState.collectAsState()
+
+            MainScreen(
+                state = paginatorState,
+                onLoadMore = viewModel::loadNextPage,
+                onRetry = viewModel::loadNextPage,
+                onRouteSelected = { id ->
+                    viewModel.selectRoute(id)
+                    navController.navigate(NotifierHomeRoute) {
+                        popUpTo<MainScreen> { inclusive = true }
+                    }
+                },
+                onCreateRoute = {
+                    navController.navigate(NewRoute)
+                }
+            )
+        }
+
         composable<NotifierHomeRoute> {
             syncManager.start()
             viewModel.getAllRoutesSummary()
             val stopStates by viewModel.stopStates.collectAsStateWithLifecycle()
             val notices by viewModel.notices.collectAsStateWithLifecycle()
-            MainScreen(
+            val pagingState by viewModel.paginatorState.collectAsState()
+
+            HomeScreen(
+                pagingState = pagingState,
                 userRoute = routeState.value,
                 allRoutes = allRoutes.value,
                 routePolyline = routePolyline,
                 createRouteFormState = createRouteFormState,
+                onLoadMorePages = {
+                    viewModel.loadNextPage()
+                },
                 onCreateRoute = { latitude, longitude ->
-                    navController.navigate(NewRoute(latitude, longitude))
+                    navController.navigate(NewRoute)
                 },
                 onChangeRoute = { routeId ->
                     viewModel.selectRoute(routeId)
@@ -420,6 +448,10 @@ fun NavigationWrapper(
                 },
                 stopStates = stopStates,
                 onStopClick = { stop ->
+                    if (RouteStateEnum.fromName(routeState.value?.state ?: "").id == 2) {
+                        viewModel.onStopClick(stop)
+                        navController.navigate(StopDetail)
+                    }
                     //viewModel.onStopClick(stop)
                 },
                 onStopDetailScreen = { stop ->

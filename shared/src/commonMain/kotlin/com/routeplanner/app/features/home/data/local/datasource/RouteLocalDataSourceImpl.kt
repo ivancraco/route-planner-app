@@ -1,5 +1,6 @@
 package com.routeplanner.app.features.home.data.local.datasource
 
+import com.routeplanner.app.core.paging.PagedResult
 import com.routeplanner.app.features.home.data.local.dao.RouteDao
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
@@ -8,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 class RouteLocalDataSourceImpl(
     private val routeDao: RouteDao,
-): RouteLocalDataSource {
+) : RouteLocalDataSource {
     override fun observeRoute(id: String): Flow<UserRoute?> {
         return routeDao.observeRoute(id = id)
     }
@@ -70,8 +71,12 @@ class RouteLocalDataSourceImpl(
         return routeDao.selectPendingDelete()
     }
 
-    override suspend fun observeRouteSummaries(userId: Int): Flow<List<NotifierRouteSummary>> {
-        return routeDao.observeRouteSummaries(userId)
+    override suspend fun observeRouteSummaries(
+        userId: Int,
+        page: Int,
+        pageSize: Int
+    ): Flow<PagedResult<NotifierRouteSummary>> {
+        return routeDao.observeRouteSummaries(userId, page, pageSize)
     }
 
     override suspend fun markAsSynced(id: String) {

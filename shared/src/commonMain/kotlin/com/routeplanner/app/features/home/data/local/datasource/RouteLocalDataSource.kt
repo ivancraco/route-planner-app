@@ -1,5 +1,6 @@
 package com.routeplanner.app.features.home.data.local.datasource
 
+import com.routeplanner.app.core.paging.PagedResult
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
 import com.routeplanner.app.features.home.domain.model.UpdateRoute
@@ -17,7 +18,11 @@ interface RouteLocalDataSource {
     suspend fun selectByUserId(userId: Long): List<UserRoute>
     suspend fun selectPendingSync(): List<UserRoute>
     suspend fun selectPendingDelete(): List<UserRoute>
-    suspend fun observeRouteSummaries(userId: Int): Flow<List<NotifierRouteSummary>>
+    suspend fun observeRouteSummaries(
+        userId: Int,
+        page: Int,
+        pageSize: Int
+    ): Flow<PagedResult<NotifierRouteSummary>>
     suspend fun markAsSynced(id: String)
     suspend fun upsertFromApi(route: UpdateRoute, userId: Long)
     suspend fun selectById(id: String): UserRoute?

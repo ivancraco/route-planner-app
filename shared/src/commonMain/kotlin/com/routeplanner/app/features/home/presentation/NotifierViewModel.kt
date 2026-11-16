@@ -2,6 +2,7 @@ package com.routeplanner.app.features.home.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routeplanner.app.core.paging.Paginator
 import com.routeplanner.app.core.utils.PolylineDecoder
 import com.routeplanner.app.core.utils.generateId
 import com.routeplanner.app.features.auth.data.local.SessionLocalDataSource
@@ -28,10 +29,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
@@ -42,6 +43,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
 
 data class CreateRouteFormState(
@@ -91,9 +93,19 @@ class NotifierViewModel(
         _currentLocation.value
     }
 
+    private val _paginator = Paginator(pageSize = 20) { page, pageSize ->
+        routeRepository.observeRouteSummaries(
+            page = page,
+            pageSize = pageSize
+        ).first()
+    }
+
+    val paginatorState = _paginator.state
+
     init {
+        loadNextPage()
         queryFlow
-            .debounce(300)
+            .debounce(300.milliseconds)
             .map { it.trim() }
             .distinctUntilChanged()
             .onEach { q ->
@@ -110,7 +122,6 @@ class NotifierViewModel(
             .onEach { result ->
                 result.fold(
                     onSuccess = { suggestions ->
-                        println("-----success------")
                         println("$suggestions")
                         placesState.update {
                             it.copy(
@@ -120,7 +131,6 @@ class NotifierViewModel(
                         }
                     },
                     onFailure = { e ->
-                        println("-----failure------")
                         println(e.stackTraceToString())
                         placesState.update {
                             it.copy(
@@ -132,6 +142,12 @@ class NotifierViewModel(
                 )
             }
             .launchIn(viewModelScope)
+    }
+
+    fun loadNextPage() {
+        viewModelScope.launch(Dispatchers.Default) {
+            _paginator.loadNextPage()
+        }
     }
 
     // estados disponibles para el dropdown
@@ -273,7 +289,7 @@ class NotifierViewModel(
     }
 
     fun onOpenCreateRoute(currentLatitude: Double?, currentLongitude: Double?) {
-        _createRouteFormState.update { CreateRouteFormState() }
+        //_createRouteFormState.update { CreateRouteFormState() }
         if (currentLatitude != null && currentLongitude != null) {
             _createRouteFormState.update {
                 it.copy(
@@ -357,6 +373,7 @@ class NotifierViewModel(
             )
             val id = routeRepository.insertRoute(userRoute = route, userId = userId)
             selectRoute(id)
+            _paginator.refresh()
         }
     }
 
@@ -417,9 +434,10 @@ class NotifierViewModel(
 
     fun getAllRoutesSummary() {
         viewModelScope.launch(Dispatchers.Default) {
-            routeRepository.observeRouteSummaries().collectLatest {
+            _paginator.loadNextPage()
+            /*routeRepository.observeRouteSummaries().collectLatest {
                 routeSummary.value = it
-            }
+            }*/
         }
     }
 
@@ -441,6 +459,7 @@ class NotifierViewModel(
     fun updateRouteName(id: String, name: String) {
         viewModelScope.launch(Dispatchers.Default) {
             routeRepository.updateName(id, name)
+            _paginator.refresh()
         }
     }
 
@@ -480,6 +499,7 @@ class NotifierViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             routeRepository.softDelete(routeId)
             clearRoute()
+            _paginator.refresh()
             //route.value = null
         }
     }
@@ -546,9 +566,6 @@ class NotifierViewModel(
 
     fun onStopNoteChange(value: String) =
         _stopFormState.update { it.copy(note = value) }
-
-    fun onDismissStopForm() =
-        _stopFormState.update { StopFormState() }
 
     fun onCreateStop() {
         val form = _stopFormState.value
@@ -644,6 +661,13 @@ class NotifierViewModel(
             }
         }
     }*/
+
+    fun onClearRouteFormState() {
+        _createRouteFormState.update { CreateRouteFormState() }
+    }
+
+    fun onClearStopFormState() =
+        _stopFormState.update { StopFormState() }
 
     fun onClearPlacesState() {
         placesState.update { AddressSearchState() }

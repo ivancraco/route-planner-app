@@ -55,7 +55,9 @@ fun SelectRouteSummaries.toUserRouteSummary(): NotifierRouteSummary =
     NotifierRouteSummary(
         id = id,
         name = name,
-        createdAt = createdAt
+        state = stateDescription,
+        createdAt = createdAt,
+        stopsCount = stopsCount.toInt()
     )
 
 fun PageResult<SupervisorRouteSummaryDto>.toDomain(): PagedResult<SupervisorRouteSummary> =

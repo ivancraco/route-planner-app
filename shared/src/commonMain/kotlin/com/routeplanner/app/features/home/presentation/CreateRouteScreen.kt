@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
@@ -33,8 +36,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,6 +54,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.routeplanner.app.core.common.toArgentinaDateString
 import com.routeplanner.app.core.ui.RoutePlannerTheme
 import com.routeplanner.app.core.ui.rememberPalette
@@ -66,7 +75,7 @@ import kotlin.uuid.ExperimentalUuidApi
 fun CreateRouteScreen(
     placesState: AddressSearchState,
     formState: CreateRouteFormState,
-    onDismiss: () -> Unit,
+    onBack: () -> Unit,
     onNameChange: (String) -> Unit,
     onDateChange: (Instant) -> Unit,
     onOriginSelected: (String, String?, Double, Double) -> Unit,
@@ -92,110 +101,126 @@ fun CreateRouteScreen(
             .toEpochMilliseconds()
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(palette.background)
-            .statusBarsPadding()
-            .padding(
-                horizontal = RoutePlannerTheme.dimens.contentPaddingHorizontal,
-                vertical = RoutePlannerTheme.dimens.contentPaddingVertical
-            ),
-        verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceXl),
-    ) {
-        // Header
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "Nueva ruta",
-                color = palette.textPrimary,
-                style = RoutePlannerTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.align(Alignment.Center),
-            )
-            IconButton(
-                onClick = onDismiss,
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .size(RoutePlannerTheme.dimens.iconSizeMd),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Cerrar",
-                    tint = palette.textPrimary,
-                )
-            }
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        onBackCompleted = {
+            onBack()
         }
+    )
 
-        // Nombre
-        OutlinedTextField(
-            value = formState.name,
-            onValueChange = onNameChange,
-            placeholder = { Text(text = "Nombre de la ruta") },
-            modifier = Modifier.fillMaxWidth(),
-            shape = shape,
-            singleLine = true,
-            colors = stopFieldColors(),
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
-        )
-
-        // Origen
-        Column(
-            verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
-        ) {
-            SectionLabel("Origen")
-            val shortAddress = formState.originDir
-                .split(",")
-                .firstOrNull()
-                ?.trim() ?: formState.originDir
-            SelectorRow(
-                icon = Icons.Default.LocationOn,
-                text = shortAddress.ifBlank { "Seleccionar origen" },
-                isPlaceholder = formState.originDir.isBlank(),
-                isLoading = formState.isResolvingOrigin,
-                onClick = {
-                    if (!formState.isResolvingOrigin)
-                        onNavigateToAddressSearchScreen()
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = palette.background,
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = palette.background,
+                    scrolledContainerColor = palette.background,
+                ),
+                title = {
+                    Text(
+                        text = "Nueva ruta",
+                        style = RoutePlannerTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.textPrimary
+                    )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = onBack
+                    ) {
+                        Icon(
+                            Icons.Default.ArrowBackIosNew,
+                            "Volver",
+                            tint = palette.textPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             )
         }
-
-        // Fecha
+    ) { paddingValues ->
         Column(
-            verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
-        ) {
-            SectionLabel("Fecha")
-            SelectorRow(
-                icon = Icons.Default.CalendarMonth,
-                text = formState.selectedDate.toArgentinaDateString(),
-                onClick = { showDatePicker = true }
-            )
-        }
-
-        // Botón crear
-        val canCreate = formState.isValid && !formState.isResolvingOrigin
-        Button(
-            onClick = {
-                onCreateRoute()
-                onDismiss()
-            },
-            enabled = canCreate,
             modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
-            shape = shape,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = palette.accent,
-                contentColor = palette.onAccent,
-                disabledContainerColor = palette.border,
-                disabledContentColor = palette.textSecondary.copy(alpha = 0.5f),
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(palette.background)
+                .statusBarsPadding()
+                .padding(
+                    horizontal = RoutePlannerTheme.dimens.contentPaddingHorizontal,
+                    vertical = RoutePlannerTheme.dimens.contentPaddingVertical
+                ),
+            verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceXl),
         ) {
-            Text(
-                text = "Crear ruta",
-                style = RoutePlannerTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
+            OutlinedTextField(
+                value = formState.name,
+                onValueChange = onNameChange,
+                placeholder = { Text(text = "Nombre de la ruta") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = shape,
+                singleLine = true,
+                colors = stopFieldColors(),
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences)
             )
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
+            ) {
+                SectionLabel("Origen")
+                val shortAddress = formState.originDir
+                    .split(",")
+                    .firstOrNull()
+                    ?.trim() ?: formState.originDir
+                SelectorRow(
+                    icon = Icons.Default.LocationOn,
+                    text = shortAddress.ifBlank { "Seleccionar origen" },
+                    isPlaceholder = formState.originDir.isBlank(),
+                    isLoading = formState.isResolvingOrigin,
+                    onClick = {
+                        if (!formState.isResolvingOrigin)
+                            onNavigateToAddressSearchScreen()
+                    }
+                )
+            }
+
+            // Fecha
+            Column(
+                verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
+            ) {
+                SectionLabel("Fecha")
+                SelectorRow(
+                    icon = Icons.Default.CalendarMonth,
+                    text = formState.selectedDate.toArgentinaDateString(),
+                    onClick = { showDatePicker = true }
+                )
+            }
+
+            // Botón crear
+            val canCreate = formState.isValid && !formState.isResolvingOrigin
+            Button(
+                onClick = {
+                    onCreateRoute()
+                    onBack()
+                },
+                enabled = canCreate,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = shape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = palette.accent,
+                    contentColor = palette.onAccent,
+                    disabledContainerColor = palette.border,
+                    disabledContentColor = palette.textSecondary.copy(alpha = 0.5f),
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+            ) {
+                Text(
+                    text = "Crear ruta",
+                    style = RoutePlannerTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
         }
     }
 

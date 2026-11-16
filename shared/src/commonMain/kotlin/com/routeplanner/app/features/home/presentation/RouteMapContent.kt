@@ -217,7 +217,12 @@ fun RouteMap(
         polylines = polylines,
         customMarkerContent = customMarkerContent,
         onMarkerClick = { marker ->
-            val stop = userRoute?.userStops?.firstOrNull { it.direction == marker.title }
+            val stop = userRoute?.userStops?.firstOrNull {
+                val shortAddress = it.direction.split(",")
+                    .firstOrNull()
+                    ?.trim() ?: it.direction
+                shortAddress == marker.title
+            }
             //val stop = notifierRoute { it.label == marker.title }
             stop?.let { onMarkerClick(it) }
         },

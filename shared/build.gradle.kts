@@ -102,6 +102,7 @@ kotlin {
             implementation(libs.ktor.client.logging)
             //Navigation
             implementation(libs.navigation.compose)
+            implementation(libs.compose.navigationevent)
             //Koin
             implementation(libs.koin.core)
             implementation(libs.koin.compose)

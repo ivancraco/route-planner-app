@@ -52,6 +52,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.routeplanner.app.core.ui.RoutePlannerTheme
 import com.routeplanner.app.features.home.domain.model.AddressSearchState
 import com.routeplanner.app.features.home.places.AddressSuggestion
@@ -232,7 +235,7 @@ fun AddressSearchField2(
     onSuggestionSelected: (AddressSuggestion, (SelectedAddress) -> Unit) -> Unit,
     onReverseGeocoding: (Double, Double) -> Unit,
     onConfirmAction: () -> Unit,
-    onBack: () -> Unit = {},
+    onBack: () -> Unit,
     label: String = "Buscar dirección",
 ) {
     var selectedAddress by remember { mutableStateOf<AddressSuggestion?>(null) }
@@ -256,6 +259,13 @@ fun AddressSearchField2(
             )
         }
     }
+
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        onBackCompleted = {
+            onBack()
+        }
+    )
 
     Box(
         modifier =

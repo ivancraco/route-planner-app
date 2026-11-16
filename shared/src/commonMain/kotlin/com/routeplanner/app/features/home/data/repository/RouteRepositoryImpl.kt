@@ -31,8 +31,15 @@ class RouteRepositoryImpl(
         return routeLocalDataSource.observeRoute(id = id)
     }
 
-    override suspend fun observeRouteSummaries(): Flow<List<NotifierRouteSummary>> {
-        return routeLocalDataSource.observeRouteSummaries(userId = 1)
+    override suspend fun observeRouteSummaries(
+        page: Int,
+        pageSize: Int
+    ): Flow<PagedResult<NotifierRouteSummary>> {
+        return routeLocalDataSource.observeRouteSummaries(
+            userId = 1,
+            page = page,
+            pageSize = pageSize
+        )
         /*session.getSession()?.let {
             return routeLocalDataSource.observeRouteSummaries(userId = it.id)
         }

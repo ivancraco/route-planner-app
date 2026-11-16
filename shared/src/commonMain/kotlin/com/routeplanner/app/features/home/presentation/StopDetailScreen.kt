@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
@@ -23,15 +24,17 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,7 +42,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,7 +52,7 @@ import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.StopState
 
 @Composable
-fun StopDetailPanel(
+fun StopDetailScreen(
     state: StopDetailState,
     stopStates: List<StopState>,
     notices: List<Notices>,
@@ -60,7 +62,7 @@ fun StopDetailPanel(
     onMarkExitosa: () -> Unit,
     onMarkFallida: () -> Unit,
     onDelete: (String) -> Unit,
-    onDismiss: () -> Unit,
+    onBack: () -> Unit,
 ) {
     val stop = state.stop ?: return
     val palette = rememberPalette()
@@ -77,122 +79,135 @@ fun StopDetailPanel(
         .firstOrNull()
         ?.trim() ?: stop.direction
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(palette.background)
-            .statusBarsPadding()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onDismiss) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Volver",
-                    tint = palette.textPrimary
-                )
-            }
-            Text(
-                text = "Detalles de entrega",
-                style = RoutePlannerTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = palette.textPrimary,
-                modifier = Modifier.weight(1f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            IconButton(onClick = {
-                showConfirmDeleteStop = true
-                stopToDeleteId = state.stop.id
-            }) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Eliminar",
-                    tint = palette.danger
-                )
-            }
-        }
-
-        //HorizontalDivider(color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.1f))
-
-        // Info
-        //StopInfoRow(label = "Destinatario", value = stop.recipient)
-        //StopInfoRow(label = "Carácter", value = notices.find { it.id == stop.noticeId }?.description
-        //   ?: "")
-        //StopInfoRow(label = "Estado", value = currentState.description)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = fieldShape,
-            colors = CardDefaults.cardColors(containerColor = palette.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            border = BorderStroke(1.dp, palette.border),
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        all = RoutePlannerTheme.dimens.spaceMd
-                    ),
-                verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceXs),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = shortAddress,
-                    style = RoutePlannerTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = palette.textPrimary
-                )
-                Text(
-                    text = "${stop.recipient} · ${notices.find { it.id == stop.noticeId }?.description}",
-                    style = RoutePlannerTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Normal,
-                    color = palette.textSecondary
-                )
-            }
-        }
-
-        StopStateDropdown(
-            current = currentState,
-            states = stopStates,
-            palette = palette,
-            onSelected = { state ->
-                onStateChange(state)
-                onDismiss()
-            }
-        )
-
-        // Nota
-        OutlinedTextField(
-            value = state.noteInput,
-            onValueChange = onNoteChange,
-            label = { Text("Nota") },
-            minLines = 3,
-            maxLines = 3,
-            shape = fieldShape,
-            colors = stopFieldColors(palette),
-            trailingIcon = {
-                if (state.noteInput != (stop.note ?: "")) {
-                    IconButton(onClick = onSaveNote) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        containerColor = palette.background,
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = palette.background,
+                    scrolledContainerColor = palette.background,
+                ),
+                title = {
+                    Text(
+                        text = "Detalles de entrega",
+                        style = RoutePlannerTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.textPrimary
+                    )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = onBack
+                    ) {
                         Icon(
-                            Icons.Default.Check,
-                            contentDescription = "Guardar",
-                            tint = palette.accent
+                            Icons.Default.ArrowBackIosNew,
+                            "Volver",
+                            tint = palette.textPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        showConfirmDeleteStop = true
+                        stopToDeleteId = state.stop.id
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Eliminar",
+                            tint = palette.danger
                         )
                     }
                 }
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
+            )
+        }
+    ) { paddingValues ->
 
-        Spacer(modifier = Modifier.weight(1f))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .background(palette.background)
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            //HorizontalDivider(color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.1f))
 
-        // Acciones — solo si está pendiente
-        /*if (stop.state == StopStateEnum.PENDIENTE.description) {
+            // Info
+            //StopInfoRow(label = "Destinatario", value = stop.recipient)
+            //StopInfoRow(label = "Carácter", value = notices.find { it.id == stop.noticeId }?.description
+            //   ?: "")
+            //StopInfoRow(label = "Estado", value = currentState.description)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = fieldShape,
+                colors = CardDefaults.cardColors(containerColor = palette.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                border = BorderStroke(1.dp, palette.border),
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            all = RoutePlannerTheme.dimens.spaceMd
+                        ),
+                    verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceXs),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = shortAddress,
+                        style = RoutePlannerTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.textPrimary
+                    )
+                    Text(
+                        text = "${stop.recipient} · ${notices.find { it.id == stop.noticeId }?.description}",
+                        style = RoutePlannerTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Normal,
+                        color = palette.textSecondary
+                    )
+                }
+            }
+
+            StopStateDropdown(
+                current = currentState,
+                states = stopStates,
+                palette = palette,
+                onSelected = { state ->
+                    onStateChange(state)
+                    onBack()
+                }
+            )
+
+            // Nota
+            OutlinedTextField(
+                value = state.noteInput,
+                onValueChange = onNoteChange,
+                label = { Text("Nota") },
+                minLines = 3,
+                maxLines = 3,
+                shape = fieldShape,
+                colors = stopFieldColors(palette),
+                trailingIcon = {
+                    if (state.noteInput != (stop.note ?: "")) {
+                        IconButton(onClick = onSaveNote) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = "Guardar",
+                                tint = palette.accent
+                            )
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Acciones — solo si está pendiente
+            /*if (stop.state == StopStateEnum.PENDIENTE.description) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -223,18 +238,19 @@ fun StopDetailPanel(
                 }
             }
         }*/
-        if (showConfirmDeleteStop) {
-            ConfirmDeleteDialog(
-                text = "¿Eliminar entrega?",
-                onDismiss = { showConfirmDeleteStop = false },
-                onDelete = {
-                    showConfirmDeleteStop = false
-                    stopToDeleteId?.let {
-                        onDelete(it)
-                        stopToDeleteId = null
+            if (showConfirmDeleteStop) {
+                ConfirmDeleteDialog(
+                    text = "¿Eliminar entrega?",
+                    onDismiss = { showConfirmDeleteStop = false },
+                    onDelete = {
+                        showConfirmDeleteStop = false
+                        stopToDeleteId?.let {
+                            onDelete(it)
+                            stopToDeleteId = null
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }

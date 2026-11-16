@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -206,6 +207,7 @@ fun DetailScreen(
                     tint = Color.Unspecified,
                     modifier = Modifier.size(RoutePlannerTheme.dimens.iconSizeLg)
                 )
+                Spacer(modifier = Modifier.height(RoutePlannerTheme.dimens.spaceXs))
                 Text(
                     text = "No tienes una ruta activa",
                     style = RoutePlannerTheme.typography.bodyMedium,

@@ -133,10 +133,30 @@ JOIN RouteState ON Route.stateId = RouteState.id
 WHERE Route.id = :id AND isDeleted = 0;
 
 selectRouteSummaries:
-SELECT id, name, createdAt
+SELECT
+    Route.id,
+    Route.name,
+    Route.createdAt,
+    RouteState.description AS stateDescription,
+    (
+        SELECT COUNT(*)
+        FROM Stop
+        WHERE Stop.routeId = Route.id
+          AND Stop.isDeleted = 0
+    ) AS stopsCount
 FROM Route
-WHERE Route.userId = :userId AND isDeleted = 0
-ORDER BY createdAt DESC;
+INNER JOIN RouteState
+    ON Route.stateId = RouteState.id
+WHERE Route.userId = :userId
+  AND Route.isDeleted = 0
+ORDER BY Route.createdAt DESC
+LIMIT :limit OFFSET :offset;
+
+countRouteSummaries:
+SELECT COUNT(*)
+FROM Route
+WHERE userId = :userId
+  AND isDeleted = 0;
 
 deleteById:
 DELETE FROM Route WHERE id = :id;

@@ -49,13 +49,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import com.routeplanner.app.core.ui.RoutePlannerTheme
 import com.routeplanner.app.core.ui.rememberPalette
 import com.routeplanner.app.features.home.domain.model.Notices
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StopFormDialog(
+fun CreateStopScreen(
     state: StopFormState,
     notices: List<Notices>,
     onRecipientChange: (String) -> Unit,
@@ -64,12 +67,18 @@ fun StopFormDialog(
     onNoteChange: (String) -> Unit,
     onConfirm: () -> Unit,
     onConfirmAndOther: () -> Unit,
-    onDismiss: () -> Unit,
     onBack: () -> Unit
 ) {
     val palette = rememberPalette()
     val shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd)
     val canSave = state.recipient.isNotBlank() && !state.isLoading && state.notice != null
+
+    NavigationBackHandler(
+        state = rememberNavigationEventState(NavigationEventInfo.None),
+        onBackCompleted = {
+            onBack()
+        }
+    )
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),

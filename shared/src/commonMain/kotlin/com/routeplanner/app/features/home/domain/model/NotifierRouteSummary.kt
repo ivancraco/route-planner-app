@@ -5,5 +5,7 @@ import kotlin.time.Instant
 data class NotifierRouteSummary(
     val id: String,
     val name: String,
+    val state: String,
     val createdAt: Instant,
+    val stopsCount: Int,
 )

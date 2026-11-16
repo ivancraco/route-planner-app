@@ -11,11 +11,24 @@ import kotlinx.coroutines.flow.Flow
 interface RouteRepository {
     //Lectura
     fun observeRoute(id: String): Flow<UserRoute?>
-    suspend fun observeRouteSummaries(): Flow<List<NotifierRouteSummary>>
+    /*suspend fun observeRouteSummaries(
+        page: Int = 1,
+        pageSize: Int = 20
+    ): Flow<List<NotifierRouteSummary>>*/
+
+    suspend fun observeRouteSummaries(
+        page: Int = 1,
+        pageSize: Int = 20
+    ): Flow<PagedResult<NotifierRouteSummary>>
+
     suspend fun selectAll(): List<UserRoute>
     suspend fun selectById(id: String): UserRoute?
     suspend fun selectByUserId(userId: Long): List<UserRoute>
-    suspend fun getPage(username: String?, page: Int, pageSize: Int): PagedResult<SupervisorRouteSummary>
+    suspend fun getPage(
+        username: String?,
+        page: Int,
+        pageSize: Int
+    ): PagedResult<SupervisorRouteSummary>
 
     //Escritura local + sync
     suspend fun insertRoute(userRoute: UserRoute, userId: Int): String

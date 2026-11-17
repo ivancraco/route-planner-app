@@ -41,7 +41,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,8 +61,6 @@ import com.routeplanner.app.features.home.places.SelectedAddress
 import com.swmansion.kmpmaps.core.CameraPosition
 import com.swmansion.kmpmaps.core.Coordinates
 import com.swmansion.kmpmaps.core.Map
-import com.swmansion.kmpmaps.core.Marker
-
 
 enum class SelectionSource {
     SEARCH,
@@ -169,7 +166,6 @@ fun AddressSearchField(
                     items(state.suggestions, key = { it.placeId }) { suggestion ->
                         SuggestionRow(
                             suggestion = suggestion,
-                            isSelected = suggestion == selectedAddress,
                             onClick = {
                                 selectedAddress = suggestion
                             }
@@ -241,6 +237,7 @@ fun AddressSearchField2(
     var selectedAddress by remember { mutableStateOf<AddressSuggestion?>(null) }
 
     var source by remember { mutableStateOf(SelectionSource.MAP) }
+
     var selectedCoordinates by remember(latitude, longitude) {
         mutableStateOf(
             Coordinates(
@@ -249,15 +246,16 @@ fun AddressSearchField2(
             )
         )
     }
+
     var zoom by remember { mutableStateOf(16f) }
 
-    val cameraPosition by remember(selectedCoordinates, zoom) {
-        derivedStateOf {
+    var cameraPosition by remember(latitude, longitude) {
+        mutableStateOf(
             CameraPosition(
-                coordinates = selectedCoordinates,
+                coordinates = Coordinates(latitude, longitude),
                 zoom = zoom
             )
-        }
+        )
     }
 
     NavigationBackHandler(
@@ -282,7 +280,6 @@ fun AddressSearchField2(
             onCameraMove = { pos ->
                 when (source) {
                     SelectionSource.SEARCH -> {
-                        //selectedCoordinates = Coordinates(latitude, longitude)
                         source = SelectionSource.IDLE
                     }
 
@@ -296,28 +293,7 @@ fun AddressSearchField2(
                         }
                     }
                 }
-            },
-            /*markers = listOf(
-                Marker(
-                    coordinates = selectedCoordinates,
-                    title = null,
-                    contentId = "marker"
-                )
-            ),
-            customMarkerContent = mapOf(
-                "marker" to {
-                    Box {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = "Ubicación seleccionada",
-                            tint = Color.Red,
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .size(40.dp)
-                        )
-                    }
-                }
-            )*/
+            }
         )
 
         Icon(
@@ -407,7 +383,6 @@ fun AddressSearchField2(
                         items(state.suggestions, key = { it.placeId }) { suggestion ->
                             SuggestionRow(
                                 suggestion = suggestion,
-                                isSelected = suggestion == selectedAddress,
                                 onClick = {
                                     source = SelectionSource.SEARCH
                                     selectedAddress = suggestion
@@ -442,24 +417,6 @@ fun AddressSearchField2(
                 .padding(vertical = RoutePlannerTheme.dimens.spaceMd),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Mostrar coordenadas
-            /*Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Text("Latitud: ${selectedCoordinates.latitude}")
-                Text("Longitud: ${selectedCoordinates.longitude}")
-
-                Button(
-                    onClick = {
-                        // Confirmar ubicación seleccionada
-                    }
-                ) {
-                    Text("Confirmar ubicación")
-                }
-            }*/
-
             Button(
                 onClick = {
                     when (source) {
@@ -508,19 +465,12 @@ fun AddressSearchField2(
 @Composable
 private fun SuggestionRow(
     suggestion: AddressSuggestion,
-    isSelected: Boolean,
     onClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd))
-            /*.background(
-                if (isSelected)
-                    RoutePlannerTheme.colors.primaryContainer.copy(alpha = 0.5f)
-                else
-                    RoutePlannerTheme.colors.primary
-            )*/
             .clickable(onClick = onClick)
             .padding(
                 horizontal = RoutePlannerTheme.dimens.contentPaddingHorizontal,

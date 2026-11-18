@@ -5,9 +5,9 @@ import com.routeplanner.app.features.home.data.remote.dto.UpdateRouteDto
 import kotlin.time.Instant
 
 enum class RouteStateEnum(val id: Int, val description: String) {
-    ACTIVE(1, "EN CURSO"),
-    FINISHED(2, "FINALIZADA"),
-    CANCELED(3, "CANCELADA");
+    BORRADOR(1, "BORRADOR"),
+    EJECUCION(2, "EN EJECUCIÓN"),
+    FINALIZADA(3, "FINALIZADA");
 
     companion object {
         fun fromName(name: String): RouteStateEnum =

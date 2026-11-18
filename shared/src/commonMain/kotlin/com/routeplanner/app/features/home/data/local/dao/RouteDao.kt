@@ -13,7 +13,9 @@ import com.routeplanner.app.features.home.data.local.mapper.toUserRouteSummary
 import com.routeplanner.app.features.home.data.local.mapper.toUserStop
 import com.routeplanner.app.features.home.data.remote.dto.CreateRouteDto
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
+import com.routeplanner.app.features.home.domain.model.RouteState
 import com.routeplanner.app.features.home.domain.model.RouteStateEnum
+import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -44,6 +46,15 @@ class RouteDao(
             }
         }
     }
+
+    fun observeAllStates(): Flow<List<RouteState>> =
+        dbHelper.withDatabaseFlow { database ->
+            database.routeStateQueries.selectAll()
+                .asFlow()
+                .mapToList(Dispatchers.Default)
+                .map { list -> list.map { RouteState(it.id.toInt(), it.description) } }
+        }
+
 
     suspend fun insertRoute(
         userRoute: UserRoute,
@@ -125,7 +136,7 @@ class RouteDao(
         }
     }
 
-    suspend fun updatePolyline(routeId: String, encodedPolyline: String) {
+    suspend fun updatePolyline(routeId: String, encodedPolyline: String?) {
         dbHelper.withDatabase { database ->
             database.routeQueries.updatePolyline(
                 encodedPolyline = encodedPolyline,

@@ -19,6 +19,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowLeft
+import androidx.compose.material.icons.automirrored.filled.ArrowRight
+import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -27,6 +30,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -44,6 +48,7 @@ import com.routeplanner.app.core.ui.DarkPalette
 import com.routeplanner.app.core.ui.LightPalette
 import com.routeplanner.app.core.ui.RoutePlannerTheme
 import com.routeplanner.app.core.ui.UiPalette
+import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.UserStop
@@ -70,12 +75,13 @@ fun DetailScreen(
     val cardShape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd)
 
     Column(
-        verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceMd),
+        verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm),
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxSize()
             .background(palette.background)
-            .padding(horizontal = RoutePlannerTheme.dimens.contentPaddingHorizontal),
+            .padding(horizontal = RoutePlannerTheme.dimens.contentPaddingHorizontal)
+            .padding(top = RoutePlannerTheme.dimens.spaceSm),
     ) {
         if (userRoute != null) {
             val shortAddress = userRoute.originDir
@@ -125,31 +131,37 @@ fun DetailScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
             ) {
-                // Acción principal: agregar parada
-                Button(
-                    onClick = onSearchStop,
-                    modifier = Modifier.weight(1f),
-                    shape = cardShape,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = palette.accent,
-                        contentColor = palette.onAccent,
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Spacer(modifier = Modifier.size(8.dp))
-                    Text(
-                        text = "Agregar parada",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                    )
+                // Acción principal: agregar parada solo si está en Borrador
+                if (RouteStateEnum.fromName(userRoute.state).id == RouteStateEnum.BORRADOR.id) {
+                    Button(
+                        onClick = onSearchStop,
+                        modifier = Modifier.weight(1f),
+                        shape = cardShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = palette.accent,
+                            contentColor = palette.onAccent,
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(modifier = Modifier.size(8.dp))
+                        Text(
+                            text = "Agregar parada",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
                 }
-                // Acción secundaria: optimizar — solo si hay al menos 2 paradas
-                if (userRoute.userStops.size >= 2) {
+
+                // Acción secundaria: optimizar — solo si está en Ejecución y hay al menos 2 paradas
+                if (RouteStateEnum.fromName(userRoute.state).id == RouteStateEnum.EJECUCION.id &&
+                    userRoute.userStops.size >= 2
+                ) {
+
                     OutlinedButton(
                         onClick = onOptimizeRoute,
                         modifier = Modifier.weight(1f),
@@ -192,7 +204,12 @@ fun DetailScreen(
                 verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
             ) {
                 items(userRoute.userStops.sortedBy { it.order }, key = { it.id }) { stop ->
-                    StopCard(stop = stop, state = stopStates, onStopDetailScreen = onStopClick)
+                    StopCard(
+                        userRoute = userRoute,
+                        stop = stop,
+                        state = stopStates,
+                        onStopDetailScreen = onStopClick
+                    )
                 }
             }
         } else {
@@ -220,6 +237,7 @@ fun DetailScreen(
 
 @Composable
 fun StopCard(
+    userRoute: UserRoute,
     stop: UserStop,
     state: List<StopState>,
     onStopDetailScreen: (UserStop) -> Unit
@@ -246,8 +264,12 @@ fun StopCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onStopDetailScreen(stop) },
-        shape = shape,
+            .clip(shape)
+            .clickable {
+                if (RouteStateEnum.fromName(userRoute.state).id != RouteStateEnum.BORRADOR.id)
+                    onStopDetailScreen(stop)
+            },
+        //shape = shape,
         colors = CardDefaults.cardColors(containerColor = palette.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, palette.border),
@@ -256,62 +278,75 @@ fun StopCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(all = RoutePlannerTheme.dimens.spaceMd),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Número de parada: fondo de acento suave + número en acento
-            Box(
+            Row(
                 modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(palette.accentSoft),
-                contentAlignment = Alignment.Center
+                    .weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
-                    text = "${stop.order}",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = palette.accent,
-                )
-            }
-            Column {
-                Text(
-                    text = shortAddress,
-                    style = RoutePlannerTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = palette.textPrimary
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                // Número de parada: fondo de acento suave + número en acento
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(palette.accentSoft),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = stop.recipient,
-                        style = RoutePlannerTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Normal,
-                        color = palette.textSecondary
+                        text = "${stop.order}",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.accent,
                     )
-                    if (stateDescription.isNotBlank()) {
-                        /*Text(
-                            text = "·",
-                            style = RoutePlannerTheme.typography.titleSmall,
-                            color = palette.textSecondary
-                        )*/
-                        // Punto de estado
-                        Box(
-                            modifier = Modifier
-                                .size(4.dp)
-                                .clip(CircleShape)
-                                .background(statusColor)
-                        )
+                }
+                Column {
+                    Text(
+                        text = shortAddress,
+                        style = RoutePlannerTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.textPrimary
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         Text(
-                            text = stateDescription,
+                            text = stop.recipient,
                             style = RoutePlannerTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Medium,
-                            color = statusColor
+                            fontWeight = FontWeight.Normal,
+                            color = palette.textSecondary
                         )
+                        if (stateDescription.isNotBlank()) {
+                            /*Text(
+                                text = "·",
+                                style = RoutePlannerTheme.typography.titleSmall,
+                                color = palette.textSecondary
+                            )*/
+                            // Punto de estado
+                            Box(
+                                modifier = Modifier
+                                    .size(4.dp)
+                                    .clip(CircleShape)
+                                    .background(statusColor)
+                            )
+                            Text(
+                                text = stateDescription,
+                                style = RoutePlannerTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Medium,
+                                color = statusColor
+                            )
+                        }
                     }
                 }
+            }
+            if (RouteStateEnum.fromName(userRoute.state).id != RouteStateEnum.BORRADOR.id) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowRight,
+                    "",
+                    tint = RoutePlannerTheme.colors.onPrimary
+                )
             }
         }
     }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -48,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
@@ -177,6 +179,9 @@ fun CreateStopScreen(
                 OutlinedTextField(
                     value = state.recipient,
                     onValueChange = onRecipientChange,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences
+                    ),
                     singleLine = true,
                     colors = stopFieldColors(),
                     shape = shape,
@@ -218,10 +223,13 @@ fun CreateStopScreen(
             Column(
                 verticalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
             ) {
-                FieldLabel("Referencia (opcional)")
+                FieldLabel("Nota (opcional)")
                 OutlinedTextField(
                     value = state.note,
                     onValueChange = onNoteChange,
+                    keyboardOptions = KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences
+                    ),
                     //singleLine = true,
                     minLines = 2,
                     maxLines = 2,

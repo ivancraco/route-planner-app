@@ -12,6 +12,7 @@ import com.routeplanner.app.features.home.data.remote.api.RoutesApi
 import com.routeplanner.app.features.home.data.remote.datasource.RouteRemoteDataSource
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
+import com.routeplanner.app.features.home.domain.model.RouteState
 import com.routeplanner.app.features.home.domain.model.SupervisorRouteSummary
 import com.routeplanner.app.features.home.domain.model.UserStop
 import com.routeplanner.app.features.home.domain.repository.RouteRepository
@@ -66,6 +67,9 @@ class RouteRepositoryImpl(
             throw e
         }
     }
+
+    override fun observeAllStates(): Flow<List<RouteState>> =
+        routeLocalDataSource.observeAllStates()
 
     override suspend fun insertRoute(
         userRoute: UserRoute,
@@ -188,7 +192,7 @@ class RouteRepositoryImpl(
         stops = stops
     )
 
-    override suspend fun updatePolyline(routeId: String, encodedPolyline: String) {
+    override suspend fun updatePolyline(routeId: String, encodedPolyline: String?) {
         routeLocalDataSource.updatePolyline(routeId, encodedPolyline)
     }
 

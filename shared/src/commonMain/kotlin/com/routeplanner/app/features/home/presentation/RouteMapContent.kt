@@ -1,6 +1,13 @@
 package com.routeplanner.app.features.home.presentation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.routeplanner.app.features.home.domain.model.UserRoute
@@ -91,11 +98,14 @@ fun UserRoute.toKmpMarkers(): List<Marker> {
     val stopMarkers = sortedStops.map { stop ->
         stop.toKmpMarker(waypointOrder = stop.order)
     }
+    val shortAddress = originDir.split(",")
+        .firstOrNull()
+        ?.trim() ?: originDir
     val result = mutableListOf<Marker>()
     result.add(
         Marker(
             coordinates = Coordinates(originLatitude, originLongitude),
-            title = originDir,
+            title = shortAddress,
             contentId = MarkerContentId.ORIGIN
         )
     )
@@ -158,6 +168,27 @@ fun RouteMap(
         )
     }*/
 
+    var zoom by rememberSaveable {
+        mutableFloatStateOf(13.8f)
+    }
+
+    var latitude by rememberSaveable {
+        mutableDoubleStateOf(-31.39676517404372)
+    }
+
+    var longitude by rememberSaveable {
+        mutableDoubleStateOf(-58.01713884030075)
+    }
+
+    var cameraPosition by remember {
+        mutableStateOf(
+            CameraPosition(
+                coordinates = Coordinates(latitude, longitude),
+                zoom = zoom
+            )
+        )
+    }
+
     // Construir markers y su contenido custom
     val markers = userRoute?.toKmpMarkers()
     val customMarkerContent = buildCustomMarkerContent(userRoute)
@@ -175,16 +206,17 @@ fun RouteMap(
 
     Map(
         modifier = modifier,
-        cameraPosition = CameraPosition(
-            coordinates =
-                Coordinates(
-                    -31.39676517404372,
-                    -58.01713884030075,
-                ),
-            /*if (coordinates != null) Coordinates(coordinates.latitude, longitude = coordinates.longitude)
-            else Coordinates(latitude = -31.388881, longitude = -58.013577),*/
-            zoom = 13.8f
-        ),
+        cameraPosition = cameraPosition,
+        onCameraMove = { camera ->
+            camera.zoom?.let {
+                zoom = it
+            }
+
+            camera.coordinates?.let {
+                latitude = it.latitude
+                longitude = it.longitude
+            }
+        },
         properties = MapProperties(
             isMyLocationEnabled = true,
             isTrafficEnabled = false,

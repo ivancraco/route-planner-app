@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.routeplanner.app.core.common.toArgentinaDateString
 import com.routeplanner.app.core.ui.RoutePlannerTheme
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
+import com.routeplanner.app.features.home.domain.model.RouteState
 import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.UserStop
@@ -42,11 +43,12 @@ import com.swmansion.kmpmaps.core.Coordinates
 @Composable
 fun MapScreen(
     userRoute: UserRoute?,
+    routeStates: List<RouteState>,
     allRoutes: List<NotifierRouteSummary>,
     routePolyline: List<Coordinates> = emptyList(),
+    onChangeState: (String, Int) -> Unit,
     onCreateRoute: (Double?, Double?) -> Unit,
     onChangeRoute: (String) -> Unit,
-    onFinalizeRoute: () -> Unit,
     onUpdateRouteName: (String, String) -> Unit,
     onDeleteRoute: (String) -> Unit,
     onLocationCaptured: (Double, Double) -> Unit,
@@ -62,6 +64,9 @@ fun MapScreen(
     var showOptionsDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showConfirmDeleteRoute by remember { mutableStateOf(false) }
+    val routeStatesFiltered = remember {
+
+    }
 
     /*LaunchedEffect(Unit) {
         state = locationCaptureController.captureLocation()
@@ -245,7 +250,9 @@ fun MapScreen(
                             style = RoutePlannerTheme.typography.bodySmall,
                             color = RoutePlannerTheme.colors.onPrimary.copy(alpha = 0.5f)
                         )
-                        if (RouteStateEnum.fromName(userRoute.state).id == 1)
+                        if (RouteStateEnum.fromName(userRoute.state).id
+                            != RouteStateEnum.FINALIZADA.id
+                        )
                             IconButton(onClick = { showOptionsDialog = true }) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
@@ -301,12 +308,17 @@ fun MapScreen(
         }*/
 
         if (showOptionsDialog) {
-            RouteOptions(
-                onDismiss = { showOptionsDialog = false },
-                onEditRoute = { showEditDialog = true },
-                onDelete = { showConfirmDeleteRoute = true },
-                onFinalize = { onFinalizeRoute() }
-            )
+            userRoute?.let { route ->
+                RouteOptions(
+                    routeId = route.id,
+                    routeStateId = routeStates.find { it.description == route.state }?.id ?: return,
+                    routeStates = routeStates,
+                    onDismiss = { showOptionsDialog = false },
+                    onEditRoute = { showEditDialog = true },
+                    onDelete = { showConfirmDeleteRoute = true },
+                    onChangeState = onChangeState
+                )
+            }
         }
 
         if (showConfirmDeleteRoute) {

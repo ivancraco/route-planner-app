@@ -3,6 +3,7 @@ package com.routeplanner.app.features.home.domain.repository
 import com.routeplanner.app.core.paging.PagedResult
 import com.routeplanner.app.features.home.data.remote.api.OptimalRouteResult
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
+import com.routeplanner.app.features.home.domain.model.RouteState
 import com.routeplanner.app.features.home.domain.model.SupervisorRouteSummary
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.UserStop
@@ -29,6 +30,7 @@ interface RouteRepository {
         page: Int,
         pageSize: Int
     ): PagedResult<SupervisorRouteSummary>
+    fun observeAllStates(): Flow<List<RouteState>>
 
     //Escritura local + sync
     suspend fun insertRoute(userRoute: UserRoute, userId: Int): String
@@ -58,7 +60,7 @@ interface RouteRepository {
         stops: List<UserStop>
     ): Result<OptimalRouteResult>
 
-    suspend fun updatePolyline(routeId: String, encodedPolyline: String)
+    suspend fun updatePolyline(routeId: String, encodedPolyline: String?)
 
     //--------------------------------------
     suspend fun selectPendingSync(): Result<List<UserRoute>>

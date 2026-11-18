@@ -3,9 +3,9 @@ CREATE TABLE RouteState (
     description TEXT NOT NULL
 );
 
-INSERT INTO RouteState (id, description) VALUES (1, 'EN CURSO');
-INSERT INTO RouteState (id, description) VALUES (2, 'FINALIZADA');
-INSERT INTO RouteState (id, description) VALUES (3, 'CANCELADA');
+INSERT INTO RouteState (id, description) VALUES (1, 'BORRADOR');
+INSERT INTO RouteState (id, description) VALUES (2, 'EN EJECUCIÓN');
+INSERT INTO RouteState (id, description) VALUES (3, 'FINALIZADA');
 
 selectAll:
 SELECT * FROM RouteState;

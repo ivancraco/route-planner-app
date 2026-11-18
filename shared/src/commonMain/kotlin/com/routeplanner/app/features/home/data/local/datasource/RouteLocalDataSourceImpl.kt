@@ -4,6 +4,7 @@ import com.routeplanner.app.core.paging.PagedResult
 import com.routeplanner.app.features.home.data.local.dao.RouteDao
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
+import com.routeplanner.app.features.home.domain.model.RouteState
 import com.routeplanner.app.features.home.domain.model.UpdateRoute
 import kotlinx.coroutines.flow.Flow
 
@@ -44,7 +45,7 @@ class RouteLocalDataSourceImpl(
         )
     }
 
-    override suspend fun updatePolyline(routeId: String, encodedPolyline: String) {
+    override suspend fun updatePolyline(routeId: String, encodedPolyline: String?) {
         routeDao.updatePolyline(
             routeId = routeId,
             encodedPolyline = encodedPolyline
@@ -77,6 +78,10 @@ class RouteLocalDataSourceImpl(
         pageSize: Int
     ): Flow<PagedResult<NotifierRouteSummary>> {
         return routeDao.observeRouteSummaries(userId, page, pageSize)
+    }
+
+    override fun observeAllStates(): Flow<List<RouteState>> {
+        return routeDao.observeAllStates()
     }
 
     override suspend fun markAsSynced(id: String) {

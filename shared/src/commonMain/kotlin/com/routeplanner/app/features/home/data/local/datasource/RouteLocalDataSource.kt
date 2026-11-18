@@ -3,6 +3,7 @@ package com.routeplanner.app.features.home.data.local.datasource
 import com.routeplanner.app.core.paging.PagedResult
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
+import com.routeplanner.app.features.home.domain.model.RouteState
 import com.routeplanner.app.features.home.domain.model.UpdateRoute
 import kotlinx.coroutines.flow.Flow
 
@@ -12,7 +13,7 @@ interface RouteLocalDataSource {
     suspend fun updateRoute(userRoute: UserRoute)
     suspend fun updateName(id: String, name: String)
     suspend fun updateState(id: String, stateId: Int)
-    suspend fun updatePolyline(routeId: String, encodedPolyline: String)
+    suspend fun updatePolyline(routeId: String, encodedPolyline: String?)
     suspend fun softDelete(id: String)
     suspend fun selectAll(): List<UserRoute>
     suspend fun selectByUserId(userId: Long): List<UserRoute>
@@ -23,6 +24,7 @@ interface RouteLocalDataSource {
         page: Int,
         pageSize: Int
     ): Flow<PagedResult<NotifierRouteSummary>>
+    fun observeAllStates(): Flow<List<RouteState>>
     suspend fun markAsSynced(id: String)
     suspend fun upsertFromApi(route: UpdateRoute, userId: Long)
     suspend fun selectById(id: String): UserRoute?

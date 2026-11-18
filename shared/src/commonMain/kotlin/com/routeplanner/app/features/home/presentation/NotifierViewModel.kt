@@ -9,6 +9,7 @@ import com.routeplanner.app.features.auth.data.local.SessionLocalDataSource
 import com.routeplanner.app.features.home.domain.model.AddressSearchState
 import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
+import com.routeplanner.app.features.home.domain.model.RouteState
 import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.UserRoute
@@ -150,7 +151,14 @@ class NotifierViewModel(
         }
     }
 
-    // estados disponibles para el dropdown
+    val routeStates: StateFlow<List<RouteState>> = routeRepository
+        .observeAllStates()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            emptyList()
+        )
+
     val stopStates: StateFlow<List<StopState>> = stopRepository
         .observeAllStates()
         .stateIn(
@@ -177,10 +185,14 @@ class NotifierViewModel(
         }
     }
 
-    fun onFinalizeRoute() {
+    fun onChangeRouteState(routeId: String, stateId: Int) {
         viewModelScope.launch {
             userRoute.value?.id?.let { routeId ->
-                routeRepository.updateState(routeId, RouteStateEnum.FINISHED.id)
+                routeRepository.updateState(routeId, stateId)
+                _paginator.refresh()
+                if (stateId == RouteStateEnum.BORRADOR.id) {
+                    routeRepository.updatePolyline(routeId, null)
+                }
                 //clearRoute()
             }
         }
@@ -361,7 +373,7 @@ class NotifierViewModel(
             val route = UserRoute(
                 id = generateId(),
                 name = form.name,
-                state = RouteStateEnum.ACTIVE.description,
+                state = RouteStateEnum.BORRADOR.description,
                 createdAt = form.selectedDate,
                 originDir = form.originDir,
                 originPlaceId = form.originPlaceId,

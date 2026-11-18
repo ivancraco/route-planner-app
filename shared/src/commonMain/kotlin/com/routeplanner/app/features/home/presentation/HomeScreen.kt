@@ -66,6 +66,7 @@ import com.routeplanner.app.core.ui.RoutePlannerTheme
 import com.routeplanner.app.core.ui.UiPalette
 import com.routeplanner.app.core.ui.rememberPalette
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
+import com.routeplanner.app.features.home.domain.model.RouteState
 import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.UserStop
@@ -125,13 +126,14 @@ fun HomeScreen(
     pagingState: PagingState<NotifierRouteSummary>,
     sharedState: SharedState = remember { SharedState() },
     userRoute: UserRoute?,
+    routeStates: List<RouteState>,
     allRoutes: List<NotifierRouteSummary>,
     routePolyline: List<Coordinates> = emptyList(),
     createRouteFormState: CreateRouteFormState,
     onLoadMorePages: () -> Unit,
     onCreateRoute: (Double?, Double?) -> Unit,
     onChangeRoute: (String) -> Unit,
-    onFinalizeRoute: () -> Unit,
+    onChangeRouteState: (String, Int) -> Unit,
     onUpdateRouteName: (String, String) -> Unit,
     onDeleteRoute: (String) -> Unit,
     onLocationCaptured: (Double, Double) -> Unit,
@@ -233,11 +235,12 @@ fun HomeScreen(
                 when (page) {
                     0 -> MapScreen(
                         userRoute = userRoute,
+                        routeStates = routeStates,
                         allRoutes = allRoutes,
                         routePolyline = routePolyline,
+                        onChangeState = onChangeRouteState,
                         onCreateRoute = onCreateRoute,
                         onChangeRoute = onChangeRoute,
-                        onFinalizeRoute = onFinalizeRoute,
                         onUpdateRouteName = onUpdateRouteName,
                         onDeleteRoute = onDeleteRoute,
                         onLocationCaptured = onLocationCaptured,
@@ -622,23 +625,34 @@ private fun RouteSummaryCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = route.name,
-                    style = RoutePlannerTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = palette.textPrimary,
+                Column(
                     modifier = Modifier.weight(1f)
-                )
+                ) {
+                    Text(
+                        text = route.name,
+                        style = RoutePlannerTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.textPrimary,
+                    )
+                    Text(
+                        text = route.state,
+                        style = RoutePlannerTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.textSecondary,
+                    )
+                }
+
                 // Usuario como chip de acento suave
                 Text(
                     text = route.createdAt.toArgentinaDateString(),
-                    style = RoutePlannerTheme.typography.bodySmall,
+                    style = RoutePlannerTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium,
                     color = palette.accent,
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(palette.accentSoft)
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .padding(horizontal = 4.dp, vertical = 4.dp)
+                        .align(Alignment.Top)
                 )
             }
             /*Text(

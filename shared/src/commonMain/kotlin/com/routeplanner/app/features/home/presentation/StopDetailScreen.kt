@@ -53,6 +53,7 @@ import com.routeplanner.app.features.home.domain.model.StopState
 
 @Composable
 fun StopDetailScreen(
+    readOnly: Boolean,
     state: StopDetailState,
     stopStates: List<StopState>,
     notices: List<Notices>,
@@ -109,16 +110,17 @@ fun StopDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        showConfirmDeleteStop = true
-                        stopToDeleteId = state.stop.id
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Eliminar",
-                            tint = palette.danger
-                        )
-                    }
+                    if (!readOnly)
+                        IconButton(onClick = {
+                            showConfirmDeleteStop = true
+                            stopToDeleteId = state.stop.id
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Eliminar",
+                                tint = palette.danger
+                            )
+                        }
                 }
             )
         }
@@ -129,7 +131,6 @@ fun StopDetailScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .background(palette.background)
-                .statusBarsPadding()
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -172,6 +173,7 @@ fun StopDetailScreen(
             }
 
             StopStateDropdown(
+                readOnly = readOnly,
                 current = currentState,
                 states = stopStates,
                 palette = palette,
@@ -183,6 +185,7 @@ fun StopDetailScreen(
 
             // Nota
             OutlinedTextField(
+                enabled = !readOnly,
                 value = state.noteInput,
                 onValueChange = onNoteChange,
                 label = { Text("Nota") },
@@ -296,6 +299,7 @@ private fun stopFieldColors(palette: UiPalette): TextFieldColors =
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StopStateDropdown(
+    readOnly: Boolean,
     current: StopState,
     states: List<StopState>,
     palette: UiPalette,
@@ -304,13 +308,17 @@ private fun StopStateDropdown(
     var expanded by remember { mutableStateOf(false) }
 
     ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it }
+        expanded = expanded && !readOnly,
+        onExpandedChange = {
+            if (!readOnly)
+                expanded = it
+        }
     ) {
         OutlinedTextField(
             value = current.description,
             onValueChange = {},
             readOnly = true,
+            enabled = !readOnly,
             label = { Text("Estado") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
             shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd),
@@ -320,7 +328,7 @@ private fun StopStateDropdown(
                 .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryEditable)
         )
         ExposedDropdownMenu(
-            expanded = expanded,
+            expanded = expanded && !readOnly,
             onDismissRequest = { expanded = false },
             containerColor = palette.surface,
             border = BorderStroke(1.dp, palette.border),

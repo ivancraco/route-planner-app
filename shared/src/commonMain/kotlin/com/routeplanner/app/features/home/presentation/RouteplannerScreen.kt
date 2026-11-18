@@ -41,6 +41,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -85,6 +86,7 @@ import com.routeplanner.app.core.ui.RoutePlannerTheme
 import com.routeplanner.app.features.home.domain.model.AddressSearchState
 import com.routeplanner.app.features.home.domain.model.Notices
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
+import com.routeplanner.app.features.home.domain.model.RouteState
 import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.UserRoute
@@ -499,12 +501,12 @@ fun RoutePlannerScreen(
             }
         }
         if (showOptionsDialog) {
-            RouteOptions(
+            /*RouteOptions(
                 onDismiss = { showOptionsDialog = false },
                 onEditRoute = { showEditDialog = true },
                 onDelete = { showConfirmDeleteRoute = true },
                 onFinalize = {}
-            )
+            )*/
         }
 
         if (showConfirmDeleteRoute) {
@@ -636,6 +638,7 @@ private fun RouteSheetContent(
     // Si hay parada seleccionada → mostrar detalle
     if (stopDetailState.stop != null) {
         StopDetailScreen(
+            readOnly = true,
             state = stopDetailState,
             stopStates = stopStates,
             notices = notices,
@@ -1166,10 +1169,13 @@ fun StopRow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RouteOptions(
+    routeId: String,
+    routeStateId: Int,
+    routeStates: List<RouteState>,
     onDismiss: () -> Unit,
     onEditRoute: () -> Unit,
     onDelete: () -> Unit,
-    onFinalize: () -> Unit
+    onChangeState: (String, Int) -> Unit
 ) {
     ModalBottomSheet(
         containerColor = RoutePlannerTheme.colors.primaryContainer,
@@ -1192,6 +1198,40 @@ fun RouteOptions(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+            ) {
+                Column {
+                    Text(
+                        text = "Estado",
+                        style = RoutePlannerTheme.typography.titleMedium,
+                        color = RoutePlannerTheme.colors.onPrimary,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceAround
+                    ) {
+                        routeStates.forEach { s ->
+                            FilterChip(
+                                selected = routeStateId == s.id,
+                                onClick = {
+                                    onChangeState(routeId, s.id)
+                                    onDismiss()
+                                },
+                                label = {
+                                    Text(
+                                        text = s.description,
+                                        style = RoutePlannerTheme.typography.bodyMedium,
+                                        color = RoutePlannerTheme.colors.onPrimary,
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            /*Row(
+                modifier = Modifier
+                    .fillMaxWidth()
                     .heightIn(RoutePlannerTheme.dimens.spaceXl)
                     .clip(RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd))
                     .clickable {
@@ -1211,16 +1251,18 @@ fun RouteOptions(
                     style = RoutePlannerTheme.typography.bodyMedium,
                     color = RoutePlannerTheme.colors.onPrimary,
                 )
-            }
+            }*/
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(RoutePlannerTheme.dimens.spaceXl)
                     .clip(RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd))
                     .clickable {
                         onDismiss()
                         onEditRoute()
-                    },
+                    }
+                    .heightIn(RoutePlannerTheme.dimens.spaceXl)
+                    .background(color = RoutePlannerTheme.colors.primary.copy(alpha = 0.2f))
+                    .padding(all = RoutePlannerTheme.dimens.spaceSm),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm),
             ) {
@@ -1230,7 +1272,7 @@ fun RouteOptions(
                     tint = RoutePlannerTheme.colors.onPrimary,
                 )
                 Text(
-                    text = "Editar ruta",
+                    text = "Editar nombre",
                     style = RoutePlannerTheme.typography.bodyMedium,
                     color = RoutePlannerTheme.colors.onPrimary,
                 )
@@ -1238,12 +1280,14 @@ fun RouteOptions(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(RoutePlannerTheme.dimens.spaceXl)
                     .clip(RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd))
                     .clickable {
                         onDismiss()
                         onDelete()
-                    },
+                    }
+                    .heightIn(RoutePlannerTheme.dimens.spaceXl)
+                    .background(color = RoutePlannerTheme.colors.primary.copy(alpha = 0.2f))
+                    .padding(all = RoutePlannerTheme.dimens.spaceSm),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm),
             ) {

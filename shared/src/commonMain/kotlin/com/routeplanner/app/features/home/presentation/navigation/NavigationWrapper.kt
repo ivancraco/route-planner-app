@@ -58,7 +58,7 @@ data class SearchDirectionStop(
 object FormStop
 
 @Serializable
-object StopDetail
+data class StopDetail(val readOnly: Boolean)
 
 @Serializable
 object MainScreen
@@ -70,9 +70,10 @@ fun NavigationWrapper(
     syncManager: SyncManager = koinInject()
 ) {
     val navController = rememberNavController()
-    val routeState = viewModel.userRoute.collectAsState()
-    val allRoutes = viewModel.routeSummary.collectAsStateWithLifecycle()
-    val placesState = viewModel.placesState.collectAsState()
+    val userRoute by viewModel.userRoute.collectAsState()
+    val routeStates by viewModel.routeStates.collectAsState()
+    val allRoutes by viewModel.routeSummary.collectAsStateWithLifecycle()
+    val placesState by viewModel.placesState.collectAsState()
     val createRouteFormState by viewModel.createRouteFormState.collectAsStateWithLifecycle()
     val routePolyline by viewModel.routePolyline.collectAsStateWithLifecycle()
 
@@ -106,7 +107,7 @@ fun NavigationWrapper(
                 }*/
             }
             CreateRouteScreen(
-                placesState = placesState.value,
+                placesState = placesState,
                 onBack = {
                     if (navController.previousBackStackEntry != null) {
                         navController.popBackStack()
@@ -177,7 +178,7 @@ fun NavigationWrapper(
             var longitude by remember { mutableStateOf(data.longitude) }
 
             AddressSearchField2(
-                state = placesState.value,
+                state = placesState,
                 latitude = latitude,
                 longitude = longitude,
                 onConfirmAction = {
@@ -221,7 +222,7 @@ fun NavigationWrapper(
             var longitude by remember { mutableStateOf(data.longitude) }
 
             AddressSearchField2(
-                state = placesState.value,
+                state = placesState,
                 latitude = latitude,
                 longitude = longitude,
                 onConfirmAction = { // navegar al formulario
@@ -301,10 +302,12 @@ fun NavigationWrapper(
         }
 
         composable<StopDetail> {
+            val data = it.toRoute<StopDetail>()
             val stopDetailState = viewModel.stopDetailState.collectAsState().value
             val stopStates by viewModel.stopStates.collectAsStateWithLifecycle()
             val notices by viewModel.notices.collectAsStateWithLifecycle()
             StopDetailScreen(
+                readOnly = data.readOnly,
                 state = stopDetailState,
                 stopStates = stopStates,
                 notices = notices,
@@ -423,8 +426,9 @@ fun NavigationWrapper(
 
             HomeScreen(
                 pagingState = pagingState,
-                userRoute = routeState.value,
-                allRoutes = allRoutes.value,
+                userRoute = userRoute,
+                routeStates = routeStates,
+                allRoutes = allRoutes,
                 routePolyline = routePolyline,
                 createRouteFormState = createRouteFormState,
                 onLoadMorePages = {
@@ -436,7 +440,9 @@ fun NavigationWrapper(
                 onChangeRoute = { routeId ->
                     viewModel.selectRoute(routeId)
                 },
-                onFinalizeRoute = { viewModel.onFinalizeRoute() },
+                onChangeRouteState = { routeId, stateId ->
+                    viewModel.onChangeRouteState(routeId, stateId)
+                },
                 onUpdateRouteName = { id, name ->
                     viewModel.updateRouteName(id, name)
                 },
@@ -448,15 +454,20 @@ fun NavigationWrapper(
                 },
                 stopStates = stopStates,
                 onStopClick = { stop ->
-                    if (RouteStateEnum.fromName(routeState.value?.state ?: "").id == 2) {
-                        viewModel.onStopClick(stop)
-                        navController.navigate(StopDetail)
+                    userRoute?.let {
+                        if (RouteStateEnum.fromName(it.state).id == RouteStateEnum.FINALIZADA.id) {
+                            viewModel.onStopClick(stop)
+                            navController.navigate(route = StopDetail(readOnly = true))
+                        }
+                        //viewModel.onStopClick(stop)
                     }
-                    //viewModel.onStopClick(stop)
                 },
                 onStopDetailScreen = { stop ->
-                    viewModel.onStopClick(stop)
-                    navController.navigate(StopDetail)
+                    userRoute?.let {
+                        viewModel.onStopClick(stop)
+                        val readOnly = RouteStateEnum.fromName(it.state).id == RouteStateEnum.FINALIZADA.id
+                        navController.navigate(route = StopDetail(readOnly))
+                    }
                 },
                 onSearchStop = {
                     viewModel.onSearchStopClick()

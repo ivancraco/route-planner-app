@@ -19,9 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowLeft
 import androidx.compose.material.icons.automirrored.filled.ArrowRight
-import androidx.compose.material.icons.filled.ArrowLeft
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -31,24 +29,19 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.routeplanner.app.core.common.toArgentinaDateString
-import com.routeplanner.app.core.ui.DarkPalette
-import com.routeplanner.app.core.ui.LightPalette
 import com.routeplanner.app.core.ui.RoutePlannerTheme
-import com.routeplanner.app.core.ui.UiPalette
+import com.routeplanner.app.core.ui.rememberPalette
 import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.domain.model.StopState
 import com.routeplanner.app.features.home.domain.model.TravelMode
@@ -57,12 +50,6 @@ import com.routeplanner.app.features.home.domain.model.UserStop
 import org.jetbrains.compose.resources.painterResource
 import route_planner_app.shared.generated.resources.Res
 import route_planner_app.shared.generated.resources.app_icon
-
-@Composable
-private fun rememberPalette(): UiPalette {
-    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
-    return if (isDark) DarkPalette else LightPalette
-}
 
 @Composable
 fun DetailScreen(

@@ -6,9 +6,12 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
@@ -98,4 +101,55 @@ object RoutePlannerTheme {
         @Composable
         @ReadOnlyComposable
         get() = MaterialTheme.typography
+}
+
+// ─── Paleta de UI (tokens semánticos) ──────────────────────────
+
+@Immutable
+internal class UiPalette(
+    val background: Color,
+    val surface: Color,
+    val border: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val accent: Color,
+    val onAccent: Color,
+    val accentSoft: Color,
+    val success: Color,
+    val warning: Color,
+    val danger: Color,
+)
+
+internal val LightPalette = UiPalette(
+    background = LightBackground,
+    surface = LightSurface,
+    border = LightBorder,
+    textPrimary = LightTextPrimary,
+    textSecondary = LightTextSecondary,
+    accent = LightAccent,
+    onAccent = LightOnAccent,
+    accentSoft = LightAccentSoft,
+    success = LightSuccess,
+    warning = LightWarning,
+    danger = LightDanger,
+)
+
+internal val DarkPalette = UiPalette(
+    background = DarkBackground,
+    surface = DarkSurface,
+    border = DarkBorder,
+    textPrimary = DarkTextPrimary,
+    textSecondary = DarkTextSecondary,
+    accent = DarkAccent,
+    onAccent = DarkOnAccent,
+    accentSoft = DarkAccentSoft,
+    success = DarkSuccess,
+    warning = DarkWarning,
+    danger = DarkDanger,
+)
+
+@Composable
+internal fun rememberPalette(): UiPalette {
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    return if (isDark) DarkPalette else LightPalette
 }

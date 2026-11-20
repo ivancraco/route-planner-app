@@ -218,7 +218,6 @@ fun MapScreen(
                 Row(
                     modifier = Modifier
                         .weight(1f)
-                        .height(50.dp)
                         .background(
                             color = RoutePlannerTheme.colors.primary,
                             shape = RoundedCornerShape(RoutePlannerTheme.dimens.spaceMd)

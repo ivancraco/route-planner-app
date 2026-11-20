@@ -1,5 +1,6 @@
 package com.routeplanner.app.features.home.data.remote.api
 
+import com.routeplanner.app.features.home.domain.model.TravelMode
 import com.routeplanner.app.features.home.domain.model.UserStop
 import com.routeplanner.app.features.home.places.LatLngDto
 import io.ktor.client.HttpClient
@@ -18,7 +19,8 @@ class RoutesApi(
     suspend fun computeOptimalRoute(
         originLatitude: Double,
         originLongitude: Double,
-        stops: List<UserStop>
+        stops: List<UserStop>,
+        travelMode: TravelMode
     ): Result<OptimalRouteResult> = runCatching {
 
         val waypoints = stops.map {
@@ -52,7 +54,7 @@ class RoutesApi(
                     ),
                     intermediates = waypoints,
                     optimizeWaypointOrder = true,
-                    travelMode = "DRIVE",
+                    travelMode = travelMode.googleValue,
                 )
             )
         }.body<ComputeRoutesResponse>()

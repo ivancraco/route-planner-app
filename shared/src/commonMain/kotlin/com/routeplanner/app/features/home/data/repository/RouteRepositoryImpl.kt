@@ -14,6 +14,7 @@ import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
 import com.routeplanner.app.features.home.domain.model.RouteState
 import com.routeplanner.app.features.home.domain.model.SupervisorRouteSummary
+import com.routeplanner.app.features.home.domain.model.TravelMode
 import com.routeplanner.app.features.home.domain.model.UserStop
 import com.routeplanner.app.features.home.domain.repository.RouteRepository
 import kotlinx.coroutines.flow.Flow
@@ -185,11 +186,13 @@ class RouteRepositoryImpl(
     override suspend fun computeOptimalRoute(
         originLatitude: Double,
         originLongitude: Double,
-        stops: List<UserStop>
+        stops: List<UserStop>,
+        travelMode: TravelMode
     ): Result<OptimalRouteResult> = optimalRouteApi.computeOptimalRoute(
         originLatitude = originLatitude,
         originLongitude = originLongitude,
-        stops = stops
+        stops = stops,
+        travelMode = travelMode
     )
 
     override suspend fun updatePolyline(routeId: String, encodedPolyline: String?) {

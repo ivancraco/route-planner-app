@@ -29,6 +29,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +51,7 @@ import com.routeplanner.app.core.ui.RoutePlannerTheme
 import com.routeplanner.app.core.ui.UiPalette
 import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.domain.model.StopState
+import com.routeplanner.app.features.home.domain.model.TravelMode
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.UserStop
 import org.jetbrains.compose.resources.painterResource
@@ -67,6 +69,8 @@ fun DetailScreen(
     userRoute: UserRoute?,
     onSearchStop: () -> Unit,
     onOptimizeRoute: () -> Unit,
+    selectedTravelMode: TravelMode,
+    onTravelModeChange: (TravelMode) -> Unit,
     isOptimizing: Boolean,
     stopStates: List<StopState>,
     onStopClick: (UserStop) -> Unit,
@@ -124,6 +128,26 @@ fun DetailScreen(
                         fontWeight = FontWeight.Normal,
                         color = palette.textSecondary,
                     )
+                }
+            }
+
+            // Selector de modo de viaje — solo cuando se puede optimizar
+            if (RouteStateEnum.fromName(userRoute.state).id == RouteStateEnum.EJECUCION.id &&
+                userRoute.userStops.size >= 2
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(RoutePlannerTheme.dimens.spaceSm)
+                ) {
+                    TravelMode.entries.forEach { mode ->
+                        FilterChip(
+                            selected = mode == selectedTravelMode,
+                            onClick = { onTravelModeChange(mode) },
+                            label = { Text(mode.label) },
+                            enabled = !isOptimizing,
+                        )
+                    }
                 }
             }
 

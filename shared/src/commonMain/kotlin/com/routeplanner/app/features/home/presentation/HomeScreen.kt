@@ -68,6 +68,7 @@ import com.routeplanner.app.core.ui.rememberPalette
 import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
 import com.routeplanner.app.features.home.domain.model.RouteState
 import com.routeplanner.app.features.home.domain.model.StopState
+import com.routeplanner.app.features.home.domain.model.TravelMode
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.UserStop
 import com.routeplanner.app.features.home.location.LocationCaptureState
@@ -142,6 +143,8 @@ fun HomeScreen(
     //detalles screen
     onSearchStop: () -> Unit,
     onOptimizeRoute: () -> Unit,
+    selectedTravelMode: TravelMode,
+    onTravelModeChange: (TravelMode) -> Unit,
     isOptimizing: Boolean,
     stopStates: List<StopState>,
 ) {
@@ -257,6 +260,8 @@ fun HomeScreen(
                             userRoute = userRoute,
                             onSearchStop = onSearchStop,
                             onOptimizeRoute = onOptimizeRoute,
+                            selectedTravelMode = selectedTravelMode,
+                            onTravelModeChange = onTravelModeChange,
                             isOptimizing = isOptimizing,
                             stopStates = stopStates,
                             onStopClick = onStopDetailScreen

@@ -12,6 +12,7 @@ import com.routeplanner.app.features.home.domain.model.NotifierRouteSummary
 import com.routeplanner.app.features.home.domain.model.RouteState
 import com.routeplanner.app.features.home.domain.model.RouteStateEnum
 import com.routeplanner.app.features.home.domain.model.StopState
+import com.routeplanner.app.features.home.domain.model.TravelMode
 import com.routeplanner.app.features.home.domain.model.UserRoute
 import com.routeplanner.app.features.home.domain.model.UserStop
 import com.routeplanner.app.features.home.domain.repository.AddressAutocompleteRepository
@@ -56,6 +57,7 @@ data class CreateRouteFormState(
     val selectedDate: Instant = Clock.System.now(),
     val isResolvingOrigin: Boolean = false,
     val isOriginResolved: Boolean = false,
+    val travelMode: TravelMode = TravelMode.DRIVE,
     val isOptimizing: Boolean = false,
     val error: String? = null
 ) {
@@ -391,17 +393,23 @@ class NotifierViewModel(
 
     // ─── Ruta óptima ──────────────────────────────────────────────
 
+    fun setTravelMode(mode: TravelMode) {
+        _createRouteFormState.update { it.copy(travelMode = mode) }
+    }
+
     fun optimizeRoute() {
         val route = userRoute.value ?: return
         val stops = route.userStops
         if (stops.isEmpty()) return
+        val travelMode = _createRouteFormState.value.travelMode
 
         viewModelScope.launch {
             _createRouteFormState.update { it.copy(isOptimizing = true) }
             routeRepository.computeOptimalRoute(
                 originLatitude = route.originLatitude,
                 originLongitude = route.originLongitude,
-                stops = stops
+                stops = stops,
+                travelMode = travelMode
             ).fold(
                 onSuccess = { result ->
                     println("-----optimize success------")

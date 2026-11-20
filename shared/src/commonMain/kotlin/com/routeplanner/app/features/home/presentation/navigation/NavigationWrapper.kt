@@ -476,6 +476,8 @@ fun NavigationWrapper(
                 onOptimizeRoute = {
                     viewModel.optimizeRoute()
                 },
+                selectedTravelMode = createRouteFormState.travelMode,
+                onTravelModeChange = { viewModel.setTravelMode(it) },
                 isOptimizing = createRouteFormState.isOptimizing,
             )
             /*RoutePlannerScreen(

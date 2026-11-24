@@ -361,12 +361,10 @@ fun NavigationWrapper(
                 onSearch = { query ->
                     if (query.isEmpty()) {
                         supervisorViewModel.setUsername(null)
-                        supervisorViewModel.refresh()
-                        //supervisorViewModel.getAllRoutesFromApi()
+                        supervisorViewModel.reset()
                     } else {
                         supervisorViewModel.setUsername(query)
-                        supervisorViewModel.refresh()
-                        //supervisorViewModel.getRouteByUsername(query)
+                        supervisorViewModel.reset()
                     }
                 },
                 onRetry = { supervisorViewModel.loadNextPage() },

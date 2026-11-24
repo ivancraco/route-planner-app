@@ -66,6 +66,13 @@ class SupervisorViewModel(
         }
     }
 
+    fun reset() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _paginator.reset()
+            _paginator.loadNextPage()
+        }
+    }
+
     fun setUsername(query: String?) {
         username = query
     }

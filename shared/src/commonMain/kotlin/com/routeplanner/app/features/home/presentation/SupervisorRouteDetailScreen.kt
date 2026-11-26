@@ -20,17 +20,27 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +52,9 @@ import com.routeplanner.app.core.ui.UiPalette
 import com.routeplanner.app.core.ui.rememberPalette
 import com.routeplanner.app.core.utils.formatearFecha
 import com.routeplanner.app.features.home.domain.model.SupervisorRouteSummary
+import com.routeplanner.app.features.home.report.rememberReportExporter
+import com.routeplanner.app.features.home.report.toReportPalette
+import kotlinx.coroutines.launch
 
 @Composable
 fun SupervisorRouteDetailScreen(
@@ -50,6 +63,11 @@ fun SupervisorRouteDetailScreen(
 ) {
     val palette = rememberPalette()
     val shape = RoundedCornerShape(RoutePlannerTheme.dimens.radiusMd)
+
+    val exporter = rememberReportExporter()
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var isExporting by remember { mutableStateOf(false) }
 
     val shortRouteAddress = remember {
         route.origin
@@ -62,6 +80,7 @@ fun SupervisorRouteDetailScreen(
 
     Scaffold(
         containerColor = palette.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -148,6 +167,50 @@ fun SupervisorRouteDetailScreen(
                             .padding(horizontal = 12.dp, vertical = 4.dp)
                     )
                 }
+            }
+
+            Button(
+                onClick = {
+                    scope.launch {
+                        isExporting = true
+                        val path = try {
+                            exporter.export(route, palette.toReportPalette())
+                        } catch (e: Exception) {
+                            null
+                        } finally {
+                            isExporting = false
+                        }
+                        snackbarHostState.showSnackbar(
+                            if (path != null) "Reporte guardado" else "No se pudo exportar el reporte"
+                        )
+                    }
+                },
+                enabled = !isExporting,
+                modifier = Modifier.fillMaxWidth(),
+                shape = shape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = palette.accent,
+                    contentColor = palette.onAccent,
+                ),
+            ) {
+                if (isExporting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = palette.onAccent,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Text(
+                    text = "Exportar reporte",
+                    modifier = Modifier.padding(start = 8.dp),
+                    fontWeight = FontWeight.SemiBold,
+                )
             }
 
             // Recorrido
